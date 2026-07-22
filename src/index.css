@@ -1,0 +1,101 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-app: #f8fafc;
+    --color-sidebar: #ffffff;
+    --color-surface: #ffffff;
+    --color-raised: #f1f5f9;
+    --color-border: #e2e8f0;
+    --color-primary: #172033;
+    --color-secondary: #64748b;
+    color: var(--color-primary);
+    background: var(--color-app);
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+    background: var(--color-app);
+  }
+
+  html.dark {
+    --color-app: #09090b;
+    --color-sidebar: #111113;
+    --color-surface: #18181b;
+    --color-raised: #202024;
+    --color-border: #2e2e33;
+    --color-primary: #f4f4f5;
+    --color-secondary: #a1a1aa;
+  }
+
+  html.dark body {
+    background: var(--color-app);
+    color: var(--color-primary);
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+}
+
+@layer components {
+  .sheet-input {
+    @apply h-full w-full rounded-none border-0 bg-transparent px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-teal-100 dark:placeholder:text-zinc-500 dark:focus:ring-teal-900/60;
+    color: var(--color-primary);
+  }
+
+  .sheet-input:focus {
+    background: var(--color-surface);
+  }
+
+  .sheet-number {
+    @apply text-right tabular-nums;
+  }
+
+  .sheet-date {
+    color: var(--color-secondary);
+  }
+
+  .action-button {
+    @apply inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .bg-app {
+    background-color: var(--color-app);
+  }
+
+  .bg-sidebar {
+    background-color: var(--color-sidebar);
+  }
+
+  .bg-surface {
+    background-color: var(--color-surface);
+  }
+
+  .bg-raised {
+    background-color: var(--color-raised);
+  }
+
+  .border-app {
+    border-color: var(--color-border);
+  }
+
+  .text-primary {
+    color: var(--color-primary);
+  }
+
+  .text-secondary {
+    color: var(--color-secondary);
+  }
+}
