@@ -122,7 +122,7 @@ export default function CandidateGrid({
                 <th
                   key={column.key}
                   scope="col"
-                  className={`${column.width} border-b border-app px-3 py-2.5 font-extrabold tracking-wide`}
+                  className={`${column.width} border-b border-app px-3 py-2.5 font-semibold tracking-wide`}
                 >
                   {column.label}
                 </th>
@@ -169,7 +169,7 @@ export default function CandidateGrid({
                         )}
                         {renderTextInput(candidate, "name", "px-0 font-bold")}
                         {candidate.is_demo ? (
-                          <span className="mr-2 shrink-0 rounded-full bg-sky-100 px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-sky-700 dark:bg-sky-950 dark:text-sky-200">
+                          <span className="mr-2 shrink-0 rounded-full bg-sky-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sky-700 dark:bg-sky-950 dark:text-sky-200">
                             Sample
                           </span>
                         ) : null}

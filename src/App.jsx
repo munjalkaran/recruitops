@@ -5,7 +5,6 @@ import Toolbar from "./components/Toolbar";
 import CandidateGrid from "./components/CandidateGrid";
 import InvoiceSection from "./components/InvoiceSection";
 import AskSheetBar from "./components/AskSheetBar";
-import SummaryStats from "./components/SummaryStats";
 import ChangeRequestDialog from "./components/ChangeRequestDialog";
 import EmailDraftDialog from "./components/EmailDraftDialog";
 import DuplicateWarningDialog from "./components/DuplicateWarningDialog";
@@ -15,7 +14,7 @@ import ApprovalsPage from "./components/ApprovalsPage";
 import MyRequestsPage from "./components/MyRequestsPage";
 import TeamPage from "./components/TeamPage";
 import SettingsPage from "./components/SettingsPage";
-import SampleDataBanner from "./components/SampleDataBanner";
+import OverviewPage from "./components/OverviewPage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { useAuth } from "./contexts/AuthContext";
 import {
@@ -75,6 +74,7 @@ const searchFields = [
 ];
 
 const pageTitles = {
+  overview: "Overview",
   pipeline: "Pipeline",
   invoicing: "Invoicing",
   approvals: "Approvals",
@@ -125,7 +125,7 @@ export default function App() {
     updatePassword,
     cancelPasswordRecovery,
   } = useAuth();
-  const [theme, setTheme] = useState("light");
+  const [theme, setTheme] = useState(() => window.localStorage.getItem("recruitops-theme") || "light");
   const [authMode, setAuthMode] = useState("login");
   const [authLoading, setAuthLoading] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
@@ -136,7 +136,7 @@ export default function App() {
   const [candidates, setCandidates] = useState(() => (isDemoEnabled && !hasSupabaseConfig ? mockCandidates : []));
   const [changeRequests, setChangeRequests] = useState(() => (isDemoEnabled && !hasSupabaseConfig ? demoRequests : []));
   const [dataLoading, setDataLoading] = useState(false);
-  const [activePage, setActivePage] = useState("pipeline");
+  const [activePage, setActivePage] = useState("overview");
   const [searchTerm, setSearchTerm] = useState("");
   const [recruiterFilter, setRecruiterFilter] = useState("all");
   const [stageFilter, setStageFilter] = useState(null);
@@ -151,7 +151,6 @@ export default function App() {
   const [resumeDialogOpen, setResumeDialogOpen] = useState(false);
   const [demoStatus, setDemoStatus] = useState(null);
   const [demoActionBusy, setDemoActionBusy] = useState(false);
-  const [sampleBannerHidden, setSampleBannerHidden] = useState(false);
   const [dismissedDuplicateKeys, setDismissedDuplicateKeys] = useState(new Set());
   const fileInputRef = useRef(null);
 
@@ -161,6 +160,7 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
+    window.localStorage.setItem("recruitops-theme", theme);
   }, [theme]);
 
   const showNotice = (message) => {
@@ -317,11 +317,11 @@ export default function App() {
     return changeRequests.filter((request) => request.requested_by === activeProfile?.id);
   }, [activeProfile, changeRequests]);
 
-  const handleSignIn = async (email, password) => {
+  const handleSignIn = async (email, password, remember) => {
     if (!supabase) return;
     setAuthLoading(true);
     setAuthMessage("");
-    const { error } = await signIn(email, password);
+    const { error } = await signIn(email, password, remember);
     setAuthLoading(false);
     if (error) setAuthMessage(friendlySupabaseError(error));
   };
@@ -784,7 +784,6 @@ export default function App() {
     try {
       await restoreDemoData(batchId);
       await refreshData();
-      setSampleBannerHidden(false);
       showNotice("Sample data restored.");
       return true;
     } catch (error) {
@@ -880,6 +879,41 @@ export default function App() {
     setDuplicateDialog(null);
   };
 
+  const selectOverviewSummary = (summary, candidate = null) => {
+    setSearchTerm("");
+    setRecruiterFilter("all");
+    setStageFilter(null);
+    setStaleOnly(false);
+
+    if (summary === "candidate" && candidate) {
+      setSearchTerm(candidate.name);
+      navigate("pipeline");
+      return;
+    }
+    if (summary === "overdue") {
+      setStaleOnly(true);
+      navigate(isAdmin(activeProfile) ? "pipeline" : "followups");
+      return;
+    }
+    if (summary === "approvals") {
+      navigate(isAdmin(activeProfile) ? "approvals" : "requests");
+      return;
+    }
+    if (summary === "invoice") {
+      navigate(isAdmin(activeProfile) ? "invoicing" : "pipeline");
+      if (!isAdmin(activeProfile)) setStageFilter("Joined");
+      return;
+    }
+
+    const stageBySummary = {
+      interviewing: "Interviewing",
+      selected: "Selected",
+      joined: "Joined",
+    };
+    if (stageBySummary[summary]) setStageFilter(stageBySummary[summary]);
+    navigate("pipeline");
+  };
+
   if (authChecking) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-app text-primary">
@@ -934,6 +968,21 @@ export default function App() {
         <div className="rounded-lg border border-app bg-surface px-5 py-12 text-center text-sm font-semibold text-secondary">
           Loading RecruitOps data...
         </div>
+      );
+    }
+    if (activePage === "overview") {
+      return (
+        <OverviewPage
+          candidates={visibleCandidates}
+          pendingApprovalsCount={pendingApprovalsCount}
+          profile={activeProfile}
+          demoStatus={demoStatus}
+          demoBusy={demoActionBusy}
+          onRemoveDemo={handleRemoveDemoData}
+          onRestoreDemo={handleRestoreDemoData}
+          onNavigate={navigate}
+          onSelectSummary={selectOverviewSummary}
+        />
       );
     }
     if (activePage === "invoicing") {
@@ -1012,8 +1061,7 @@ export default function App() {
     const gridRows = activePage === "followups" ? followUpCandidates : filteredCandidates;
 
     return (
-      <div className="space-y-4">
-        <SummaryStats candidates={visibleCandidates} />
+      <div className="page-enter space-y-4">
         <Toolbar
           searchTerm={searchTerm}
           recruiterFilter={recruiterFilter}
@@ -1093,13 +1141,6 @@ export default function App() {
         <div className="mb-4 rounded-lg border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-semibold text-teal-800 dark:border-teal-800 dark:bg-teal-950/30 dark:text-teal-200">
           {notice}
         </div>
-      ) : null}
-      {isAdmin(activeProfile) && demoStatus?.status === "active" && !sampleBannerHidden ? (
-        <SampleDataBanner
-          onRemove={handleRemoveDemoData}
-          onHide={() => setSampleBannerHidden(true)}
-          busy={demoActionBusy}
-        />
       ) : null}
       {renderPage()}
       <AskSheetBar

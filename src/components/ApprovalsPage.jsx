@@ -19,7 +19,7 @@ export default function ApprovalsPage({
     <section className="space-y-4">
       <div className="rounded-lg border border-app bg-surface p-4">
         <p className="text-sm font-bold text-secondary">Pending requests count</p>
-        <p className="mt-1 text-2xl font-extrabold text-primary">{pending.length}</p>
+        <p className="mt-1 text-2xl font-semibold text-primary">{pending.length}</p>
       </div>
 
       <div className="overflow-hidden rounded-lg border border-app bg-surface">

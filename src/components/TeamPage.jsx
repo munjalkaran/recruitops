@@ -7,7 +7,7 @@ export default function TeamPage({ profiles, activeUserLimit, onUpdateProfile })
     <section className="space-y-4">
       <div className="rounded-lg border border-app bg-surface p-4">
         <p className="text-sm font-bold text-secondary">Free plan user limit</p>
-        <p className="mt-1 text-xl font-extrabold text-primary">
+        <p className="mt-1 text-xl font-semibold text-primary">
           {activeCount} of {activeUserLimit} active users
         </p>
         {activeCount >= activeUserLimit ? (

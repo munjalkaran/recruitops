@@ -1,41 +1,42 @@
-import { AlertTriangle, BriefcaseBusiness, CheckCircle2, CircleDollarSign, Users } from "lucide-react";
+import { AlertTriangle, BriefcaseBusiness, CheckCircle2, CircleDollarSign, ClipboardCheck, Users } from "lucide-react";
 import { formatCurrency, isCandidateStale } from "../utils/candidateUtils";
 
-export default function SummaryStats({ candidates }) {
+export default function SummaryStats({ candidates, pendingApprovalsCount = 0, onSelect }) {
   const active = candidates.filter((candidate) => !candidate.is_archived);
   const stale = active.filter((candidate) => isCandidateStale(candidate));
   const interviewing = active.filter((candidate) => candidate.stage === "Interviewing");
   const selected = active.filter((candidate) => candidate.stage === "Selected");
-  const joinedThisMonth = active.filter(
-    (candidate) =>
-      candidate.stage === "Joined" &&
-      String(candidate.last_contact || candidate.updated_at || "").startsWith("2026-07"),
-  );
-  const toInvoice = active
-    .filter((candidate) => candidate.stage === "Joined")
-    .reduce((total, candidate) => total + (Number(candidate.fee) || 0), 0);
+  const monthPrefix = new Date().toISOString().slice(0, 7);
+  const joinedThisMonth = active.filter((candidate) => {
+    const joinedDate = candidate.joined_at || candidate.last_contact || candidate.updated_at;
+    return candidate.stage === "Joined" && String(joinedDate || "").startsWith(monthPrefix);
+  });
+  const readyToInvoice = active.filter((candidate) => candidate.stage === "Joined");
+  const readyValue = readyToInvoice.reduce((total, candidate) => total + (Number(candidate.fee) || 0), 0);
 
   const stats = [
-    { label: "Active Candidates", value: active.length, icon: Users, tone: "text-slate-700 dark:text-zinc-100" },
-    { label: "Overdue Follow-ups", value: stale.length, icon: AlertTriangle, tone: "text-amber-700 dark:text-amber-300" },
-    { label: "Interviewing", value: interviewing.length, icon: BriefcaseBusiness, tone: "text-indigo-700 dark:text-indigo-300" },
-    { label: "Selected", value: selected.length, icon: CheckCircle2, tone: "text-violet-700 dark:text-violet-300" },
-    { label: "Joined This Month", value: joinedThisMonth.length, icon: CheckCircle2, tone: "text-emerald-700 dark:text-emerald-300" },
-    { label: "Ready to Invoice", value: formatCurrency(toInvoice), icon: CircleDollarSign, tone: "text-teal-700 dark:text-teal-300" },
+    { id: "active", label: "Active Candidates", value: active.length, icon: Users },
+    { id: "overdue", label: "Overdue Follow-ups", value: stale.length, icon: AlertTriangle, tone: "text-amber-700 dark:text-amber-300" },
+    { id: "interviewing", label: "Interviewing", value: interviewing.length, icon: BriefcaseBusiness },
+    { id: "selected", label: "Selected", value: selected.length, icon: CheckCircle2 },
+    { id: "joined", label: "Joined This Month", value: joinedThisMonth.length, icon: CheckCircle2 },
+    { id: "invoice", label: "Ready to Invoice", value: readyToInvoice.length, detail: formatCurrency(readyValue), icon: CircleDollarSign },
+    { id: "approvals", label: "Pending Approvals", value: pendingApprovalsCount, icon: ClipboardCheck, tone: "text-amber-700 dark:text-amber-300" },
   ];
 
   return (
-    <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+    <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-7">
       {stats.map((stat) => {
         const Icon = stat.icon;
         return (
-          <div key={stat.label} className="rounded-lg border border-app bg-surface px-3 py-3">
-            <div className={`mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-raised ${stat.tone}`}>
+          <button key={stat.label} type="button" onClick={() => onSelect?.(stat.id)} className="premium-card min-h-40 p-5 text-left transition hover:-translate-y-1 hover:border-[var(--accent)]">
+            <div className={`mb-6 flex h-9 w-9 items-center justify-center rounded-full bg-[var(--accent-soft)] ${stat.tone || "text-[var(--accent)]"}`}>
               <Icon size={16} />
             </div>
-            <p className="text-xs font-bold uppercase tracking-wide text-secondary">{stat.label}</p>
-            <p className="mt-1 text-lg font-extrabold text-primary">{stat.value}</p>
-          </div>
+            <p className="text-xs font-semibold uppercase tracking-[0.11em] text-secondary">{stat.label}</p>
+            <p className="mt-2 text-2xl font-semibold text-primary">{stat.value}</p>
+            {stat.detail ? <p className="mt-1 text-xs text-secondary">{stat.detail}</p> : null}
+          </button>
         );
       })}
     </section>

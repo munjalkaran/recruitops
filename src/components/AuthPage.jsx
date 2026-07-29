@@ -15,6 +15,7 @@ export default function AuthPage({
 }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(false);
 
   const submit = (event) => {
     event.preventDefault();
@@ -26,7 +27,7 @@ export default function AuthPage({
       onUpdatePassword(password);
       return;
     }
-    onSignIn(email, password);
+    onSignIn(email, password, remember);
   };
 
   return (
@@ -37,7 +38,7 @@ export default function AuthPage({
             <ShieldCheck size={16} />
             Hiring Spartans
           </div>
-          <h1 className="text-4xl font-extrabold tracking-tight text-primary sm:text-5xl">
+          <h1 className="text-4xl font-semibold tracking-tight text-primary sm:text-5xl">
             RecruitOps
           </h1>
           <p className="mt-3 text-xl font-semibold text-secondary">
@@ -51,7 +52,7 @@ export default function AuthPage({
         </section>
 
         <section className="rounded-lg border border-app bg-surface p-5 shadow-sm">
-          <h2 className="text-lg font-extrabold text-primary">
+          <h2 className="text-lg font-semibold text-primary">
             {mode === "reset" ? "Reset password" : mode === "update" ? "Choose a new password" : "Sign in"}
           </h2>
           <p className="mt-1 text-sm text-secondary">
@@ -109,10 +110,22 @@ export default function AuthPage({
               </label>
             ) : null}
 
+            {mode === "login" ? (
+              <label className="flex cursor-pointer items-center gap-2 py-1 text-sm text-secondary">
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={(event) => setRemember(event.target.checked)}
+                  className="h-4 w-4 rounded border-app accent-[var(--accent)]"
+                />
+                Remember me on this device
+              </label>
+            ) : null}
+
             <button
               type="submit"
               disabled={loading || !isSupabaseConfigured}
-              className="action-button w-full bg-teal-700 text-white hover:bg-teal-800 dark:bg-teal-400 dark:text-zinc-950 dark:hover:bg-teal-300"
+              className="action-button action-primary w-full"
             >
               {loading ? "Please wait..." : mode === "reset" ? "Send reset link" : mode === "update" ? "Save new password" : "Sign in"}
             </button>

@@ -1,8 +1,11 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { friendlySupabaseError, hasSupabaseConfig, supabase } from "../lib/supabase";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { friendlySupabaseError, hasSupabaseConfig, setAuthPersistence, supabase } from "../lib/supabase";
 import { getCurrentProfile } from "../services/profileService";
 
 const AuthContext = createContext(null);
+const IDLE_LIMIT_MS = 30 * 60 * 1000;
+const IDLE_WARNING_MS = 28 * 60 * 1000;
+const ACTIVITY_EVENTS = ["mousemove", "keydown", "click", "scroll"];
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
@@ -10,6 +13,25 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(hasSupabaseConfig);
   const [error, setError] = useState("");
   const [passwordRecovery, setPasswordRecovery] = useState(false);
+  const [idleWarning, setIdleWarning] = useState(false);
+  const warningTimer = useRef(null);
+  const logoutTimer = useRef(null);
+  const activityChannel = useRef(null);
+  const lastActivity = useRef(0);
+
+  const clearIdleTimers = useCallback(() => {
+    window.clearTimeout(warningTimer.current);
+    window.clearTimeout(logoutTimer.current);
+  }, []);
+
+  const armIdleTimers = useCallback((broadcast = false) => {
+    if (!supabase) return;
+    clearIdleTimers();
+    setIdleWarning(false);
+    warningTimer.current = window.setTimeout(() => setIdleWarning(true), IDLE_WARNING_MS);
+    logoutTimer.current = window.setTimeout(() => supabase.auth.signOut(), IDLE_LIMIT_MS);
+    if (broadcast) activityChannel.current?.postMessage({ type: "activity" });
+  }, [clearIdleTimers]);
 
   useEffect(() => {
     if (!supabase) return undefined;
@@ -48,14 +70,57 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!session) {
+      clearIdleTimers();
+      setIdleWarning(false);
+      return undefined;
+    }
+
+    activityChannel.current =
+      typeof BroadcastChannel === "undefined" ? null : new BroadcastChannel("recruitops-auth");
+    activityChannel.current?.addEventListener("message", (event) => {
+      if (event.data?.type === "activity") armIdleTimers(false);
+      if (event.data?.type === "signout") supabase.auth.signOut();
+    });
+
+    const onActivity = () => {
+      const now = Date.now();
+      if (now - lastActivity.current < 1000) return;
+      lastActivity.current = now;
+      armIdleTimers(true);
+    };
+    ACTIVITY_EVENTS.forEach((eventName) =>
+      window.addEventListener(eventName, onActivity, { passive: true }),
+    );
+    armIdleTimers(false);
+
+    return () => {
+      clearIdleTimers();
+      ACTIVITY_EVENTS.forEach((eventName) => window.removeEventListener(eventName, onActivity));
+      activityChannel.current?.close();
+      activityChannel.current = null;
+    };
+  }, [armIdleTimers, clearIdleTimers, session]);
+
+  const signOut = useCallback(async () => {
+    activityChannel.current?.postMessage({ type: "signout" });
+    return supabase.auth.signOut();
+  }, []);
+
   const value = useMemo(() => ({
     session,
     profile,
     loading,
     error,
     passwordRecovery,
-    signIn: (email, password) => supabase.auth.signInWithPassword({ email, password }),
-    signOut: () => supabase.auth.signOut(),
+    idleWarning,
+    staySignedIn: () => armIdleTimers(true),
+    signIn: (email, password, remember = false) => {
+      setAuthPersistence(remember);
+      return supabase.auth.signInWithPassword({ email, password });
+    },
+    signOut,
     resetPassword: (email) => supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/`,
     }),
@@ -65,9 +130,25 @@ export function AuthProvider({ children }) {
       return result;
     },
     cancelPasswordRecovery: () => setPasswordRecovery(false),
-  }), [error, loading, passwordRecovery, profile, session]);
+  }), [armIdleTimers, error, idleWarning, loading, passwordRecovery, profile, session, signOut]);
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+      {idleWarning ? (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4" role="dialog" aria-modal="true" aria-labelledby="idle-title">
+          <div className="premium-card w-full max-w-md p-6">
+            <h2 id="idle-title" className="text-lg text-primary">Your session will end soon due to inactivity.</h2>
+            <p className="mt-2 text-sm leading-6 text-secondary">For your security, RecruitOps signs you out after 30 minutes without activity.</p>
+            <div className="mt-6 flex justify-end gap-2">
+              <button type="button" onClick={signOut} className="action-button border border-app bg-surface text-secondary hover:bg-raised">Sign out now</button>
+              <button type="button" onClick={() => armIdleTimers(true)} className="action-button action-primary">Stay signed in</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </AuthContext.Provider>
+  );
 }
 
 export const useAuth = () => {

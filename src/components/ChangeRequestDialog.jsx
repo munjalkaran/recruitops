@@ -91,7 +91,7 @@ export default function ChangeRequestDialog({
           </button>
           <button
             type="submit"
-            className="action-button bg-teal-700 text-white hover:bg-teal-800 dark:bg-teal-400 dark:text-zinc-950"
+            className="action-button action-primary"
           >
             Submit request
           </button>

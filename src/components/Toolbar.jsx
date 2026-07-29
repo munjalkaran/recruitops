@@ -87,7 +87,7 @@ export default function Toolbar({
               <button
                 type="button"
                 onClick={onAddCandidate}
-                className="action-button bg-teal-700 text-white hover:bg-teal-800 dark:bg-teal-400 dark:text-zinc-950 dark:hover:bg-teal-300"
+                className="action-button action-primary"
               >
                 <UserPlus size={16} />
                 Add Candidate

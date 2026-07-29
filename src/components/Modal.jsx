@@ -9,7 +9,7 @@ export default function Modal({ title, description, children, onClose, size = "m
       <div className={`max-h-[90vh] w-full ${size} overflow-auto rounded-lg border border-app bg-surface shadow-xl`}>
         <div className="flex items-start justify-between border-b border-app px-5 py-4">
           <div>
-            <h2 id="modal-title" className="text-base font-extrabold text-primary">
+            <h2 id="modal-title" className="text-base font-semibold text-primary">
               {title}
             </h2>
             {description ? (

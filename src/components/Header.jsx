@@ -1,4 +1,4 @@
-import { Bell, ChevronDown, KeyRound, LogOut, Moon, Sun, UserCircle } from "lucide-react";
+import { ChevronDown, KeyRound, LogOut, Moon, Sun, UserCircle } from "lucide-react";
 import { useMemo, useState } from "react";
 import { ROLE_LABELS } from "../constants/pipeline";
 
@@ -18,7 +18,6 @@ export default function Header({
   onToggleTheme,
   onSignOut,
   onChangePassword,
-  pendingApprovalsCount,
   isDemoMode,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -26,32 +25,16 @@ export default function Header({
   const roleLabel = ROLE_LABELS[profile?.role] || profile?.role || "User";
 
   return (
-    <header className="sticky top-0 z-20 border-b border-app bg-app/95 px-4 py-3 backdrop-blur sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-20 border-b border-app bg-app/95 px-4 py-4 backdrop-blur sm:px-6 lg:px-10">
       <div className="flex items-center justify-between gap-4 pl-12 lg:pl-0">
         <div>
-          <h1 className="text-xl font-extrabold text-primary">{pageTitle}</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-primary">{pageTitle}</h1>
           <p className="mt-0.5 text-sm text-secondary">
             {isDemoMode ? "Demo data" : organisationName}
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          {pendingApprovalsCount ? (
-            <span className="hidden items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200 sm:inline-flex">
-              <Bell size={14} />
-              {pendingApprovalsCount} pending
-            </span>
-          ) : null}
-
-          <button
-            type="button"
-            onClick={onToggleTheme}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-app bg-surface text-secondary transition hover:bg-raised hover:text-primary"
-            aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-          >
-            {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
-          </button>
-
           <div className="relative">
             <button
               type="button"
@@ -67,7 +50,7 @@ export default function Header({
                   className="h-8 w-8 rounded-full object-cover"
                 />
               ) : (
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-700 text-xs font-extrabold text-white dark:bg-teal-400 dark:text-zinc-950">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent)] text-xs font-semibold text-white">
                   {initials}
                 </span>
               )}
@@ -80,7 +63,7 @@ export default function Header({
                 role="menu"
               >
                 <div className="border-b border-app pb-3">
-                  <p className="font-extrabold text-primary">{profile?.full_name}</p>
+                  <p className="font-semibold text-primary">{profile?.full_name}</p>
                   <p className="text-sm text-secondary">{profile?.email || "No email set"}</p>
                   <p className="mt-1 text-xs font-bold uppercase tracking-wide text-teal-700 dark:text-teal-300">
                     {roleLabel} · {organisationName}

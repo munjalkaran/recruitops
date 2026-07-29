@@ -4,15 +4,10 @@
 
 @layer base {
   :root {
-    --color-app: #f8fafc;
-    --color-sidebar: #ffffff;
-    --color-surface: #ffffff;
-    --color-raised: #f1f5f9;
-    --color-border: #e2e8f0;
-    --color-primary: #172033;
-    --color-secondary: #64748b;
     color: var(--color-primary);
     background: var(--color-app);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-weight: 400;
     font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
@@ -26,16 +21,6 @@
     background: var(--color-app);
   }
 
-  html.dark {
-    --color-app: #09090b;
-    --color-sidebar: #111113;
-    --color-surface: #18181b;
-    --color-raised: #202024;
-    --color-border: #2e2e33;
-    --color-primary: #f4f4f5;
-    --color-secondary: #a1a1aa;
-  }
-
   html.dark body {
     background: var(--color-app);
     color: var(--color-primary);
@@ -46,6 +31,37 @@
   select,
   textarea {
     font: inherit;
+  }
+
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    transition-duration: var(--dur);
+    transition-timing-function: var(--ease);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-weight: 600;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+    }
   }
 }
 
@@ -68,7 +84,28 @@
   }
 
   .action-button {
-    @apply inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex h-10 items-center justify-center gap-2 px-4 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50;
+    border-radius: var(--radius);
+  }
+
+  .action-primary {
+    background: var(--accent);
+    color: white;
+  }
+
+  .action-primary:hover {
+    background: var(--accent-hover);
+  }
+
+  .premium-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+  }
+
+  .page-enter {
+    animation: page-enter var(--dur) var(--ease) both;
   }
 
   .bg-app {
@@ -97,5 +134,16 @@
 
   .text-secondary {
     color: var(--color-secondary);
+  }
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

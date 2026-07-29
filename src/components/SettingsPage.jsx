@@ -13,7 +13,7 @@ export default function SettingsPage({ settings, onSave, demoStatus, demoBusy, o
   return (
     <div className="max-w-3xl space-y-4">
       <section className="rounded-lg border border-app bg-surface p-5">
-        <h2 className="text-lg font-extrabold text-primary">Organisation settings</h2>
+        <h2 className="text-lg font-semibold text-primary">Organisation settings</h2>
         <p className="mt-1 text-sm text-secondary">
           Branding and email defaults shown throughout RecruitOps.
         </p>
@@ -48,7 +48,7 @@ export default function SettingsPage({ settings, onSave, demoStatus, demoBusy, o
         <button
           type="button"
           onClick={() => onSave(form)}
-          className="action-button bg-teal-700 text-white hover:bg-teal-800 dark:bg-teal-400 dark:text-zinc-950"
+          className="action-button action-primary"
         >
           Save settings
         </button>

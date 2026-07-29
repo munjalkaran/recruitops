@@ -83,10 +83,9 @@ export default function AppShell({
           onToggleTheme={onToggleTheme}
           onSignOut={onSignOut}
           onChangePassword={onChangePassword}
-          pendingApprovalsCount={pendingApprovalsCount}
           isDemoMode={isDemoMode}
         />
-        <main className="px-4 pb-36 pt-4 sm:px-6 lg:px-8">{children}</main>
+        <main className="px-4 pb-36 pt-6 sm:px-6 lg:px-10 lg:pt-8">{children}</main>
       </div>
     </div>
   );

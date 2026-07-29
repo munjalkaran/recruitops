@@ -16,10 +16,10 @@ export default function InvoiceSection({
     <section className="space-y-4">
       <div className="flex flex-col gap-3 rounded-lg border border-app bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs font-extrabold uppercase tracking-wide text-teal-700 dark:text-teal-300">
+          <p className="text-xs font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">
             Invoicing
           </p>
-          <h2 className="mt-1 text-xl font-extrabold text-primary">
+          <h2 className="mt-1 text-xl font-semibold text-primary">
             {formatCurrency(grandTotal)} ready across {joinedCount} joined candidates
           </h2>
           <p className="mt-1 text-sm text-secondary">
@@ -41,7 +41,7 @@ export default function InvoiceSection({
             type="button"
             onClick={onMarkInvoiced}
             disabled={!hasJoinedCandidates}
-            className="action-button bg-teal-700 text-white hover:bg-teal-800 dark:bg-teal-400 dark:text-zinc-950"
+            className="action-button action-primary"
           >
             <ReceiptText size={16} strokeWidth={2.2} />
             Mark all as Invoiced
@@ -58,7 +58,7 @@ export default function InvoiceSection({
           {groups.map((group) => (
             <article key={group.bank} className="overflow-hidden rounded-lg border border-app bg-surface">
               <div className="flex items-center justify-between border-b border-app bg-raised px-4 py-3">
-                <h3 className="font-extrabold text-primary">{group.bank}</h3>
+                <h3 className="font-semibold text-primary">{group.bank}</h3>
                 <span className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
                   {formatCurrency(group.subtotal)}
                 </span>
@@ -67,10 +67,10 @@ export default function InvoiceSection({
                 <table className="w-full min-w-[560px] text-left text-sm">
                   <thead className="bg-surface text-[11px] uppercase tracking-wide text-secondary">
                     <tr>
-                      <th className="px-4 py-2.5 font-extrabold">Candidate</th>
-                      <th className="px-4 py-2.5 font-extrabold">Role</th>
-                      <th className="px-4 py-2.5 font-extrabold">Recruiter</th>
-                      <th className="px-4 py-2.5 text-right font-extrabold">Fee</th>
+                      <th className="px-4 py-2.5 font-semibold">Candidate</th>
+                      <th className="px-4 py-2.5 font-semibold">Role</th>
+                      <th className="px-4 py-2.5 font-semibold">Recruiter</th>
+                      <th className="px-4 py-2.5 text-right font-semibold">Fee</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[var(--color-border)]">

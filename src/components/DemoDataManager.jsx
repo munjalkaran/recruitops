@@ -28,32 +28,32 @@ export default function DemoDataManager({ status, busy, onRemove, onRestore }) {
   return (
     <>
       <section className="rounded-lg border border-app bg-surface p-5">
-        <h2 className="text-lg font-extrabold text-primary">Sample data</h2>
+        <h2 className="text-lg font-semibold text-primary">Sample data</h2>
         <p className="mt-1 text-sm text-secondary">
           Reversible Hiring Spartans examples for demonstrations and onboarding.
         </p>
 
         <dl className="mt-5 grid gap-3 sm:grid-cols-2">
           <div className="rounded-lg border border-app bg-raised p-3">
-            <dt className="text-xs font-extrabold uppercase tracking-wide text-secondary">Status</dt>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-secondary">Status</dt>
             <dd className="mt-1 font-bold text-primary">
               {summary.isActive ? "Active" : summary.isRemoved ? "Removed" : "Not seeded"}
             </dd>
           </div>
           <div className="rounded-lg border border-app bg-raised p-3">
-            <dt className="text-xs font-extrabold uppercase tracking-wide text-secondary">Candidates</dt>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-secondary">Candidates</dt>
             <dd className="mt-1 font-bold text-primary">{summary.count}</dd>
           </div>
           <div className="rounded-lg border border-app bg-raised p-3">
-            <dt className="text-xs font-extrabold uppercase tracking-wide text-secondary">Batch created</dt>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-secondary">Batch created</dt>
             <dd className="mt-1 text-sm font-semibold text-primary">{formatDate(status?.created_at)}</dd>
           </div>
           <div className="rounded-lg border border-app bg-raised p-3">
-            <dt className="text-xs font-extrabold uppercase tracking-wide text-secondary">Last removed</dt>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-secondary">Last removed</dt>
             <dd className="mt-1 text-sm font-semibold text-primary">{formatDate(status?.removed_at)}</dd>
           </div>
           <div className="rounded-lg border border-app bg-raised p-3 sm:col-span-2">
-            <dt className="text-xs font-extrabold uppercase tracking-wide text-secondary">Last restored</dt>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-secondary">Last restored</dt>
             <dd className="mt-1 text-sm font-semibold text-primary">{formatDate(status?.restored_at)}</dd>
           </div>
         </dl>
@@ -74,7 +74,7 @@ export default function DemoDataManager({ status, busy, onRemove, onRestore }) {
               type="button"
               onClick={() => setDialog("restore")}
               disabled={busy}
-              className="action-button bg-teal-700 text-white hover:bg-teal-800 dark:bg-teal-400 dark:text-zinc-950"
+              className="action-button action-primary"
             >
               <RotateCcw size={16} /> Restore sample data
             </button>
@@ -134,7 +134,7 @@ export default function DemoDataManager({ status, busy, onRemove, onRestore }) {
               type="button"
               onClick={confirmRestore}
               disabled={busy}
-              className="action-button bg-teal-700 text-white hover:bg-teal-800 disabled:opacity-50 dark:bg-teal-400 dark:text-zinc-950"
+              className="action-button action-primary disabled:opacity-50"
             >
               {busy ? "Restoring…" : "Restore sample data"}
             </button>

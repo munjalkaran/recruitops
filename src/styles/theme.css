@@ -1,0 +1,39 @@
+:root {
+  --bg: #f5f3ed;
+  --surface: #fbfaf7;
+  --surface-raised: #ffffff;
+  --text: #18322b;
+  --text-muted: #6d756f;
+  --border: #deddd6;
+  --accent: #174d3b;
+  --accent-hover: #103d2f;
+  --accent-soft: #e4eee9;
+  --radius: 0.875rem;
+  --shadow: 0 12px 32px rgb(31 48 41 / 7%);
+  --dur: 220ms;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Compatibility aliases for existing components. */
+  --color-app: var(--bg);
+  --color-sidebar: #efede6;
+  --color-surface: var(--surface);
+  --color-raised: var(--surface-raised);
+  --color-border: var(--border);
+  --color-primary: var(--text);
+  --color-secondary: var(--text-muted);
+}
+
+html.dark {
+  --bg: #09090b;
+  --surface: #18181b;
+  --surface-raised: #202024;
+  --text: #f4f4f5;
+  --text-muted: #a1a1aa;
+  --border: #2e2e33;
+  --accent: #83b59f;
+  --accent-hover: #a0c8b4;
+  --accent-soft: #1d3028;
+  --shadow: 0 16px 38px rgb(0 0 0 / 24%);
+  --color-sidebar: #111113;
+}
+

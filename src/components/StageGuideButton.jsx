@@ -18,7 +18,7 @@ export default function StageGuideButton() {
       </button>
       {open ? (
         <div className="absolute right-0 top-12 z-30 w-[min(92vw,420px)] rounded-lg border border-app bg-surface p-4 shadow-xl">
-          <p className="mb-3 text-sm font-extrabold text-primary">Pipeline stages</p>
+          <p className="mb-3 text-sm font-semibold text-primary">Pipeline stages</p>
           <div className="space-y-3">
             {PIPELINE_STAGES.map((stage) => (
               <div key={stage}>

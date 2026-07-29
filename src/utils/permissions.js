@@ -44,6 +44,7 @@ export const canRequestCandidateChange = (profile, candidate, field) =>
 export const getVisibleNavItems = (profile) => {
   if (isAdmin(profile)) {
     return [
+      { id: "overview", label: "Overview" },
       { id: "pipeline", label: "Pipeline" },
       { id: "invoicing", label: "Invoicing" },
       { id: "approvals", label: "Approvals" },
@@ -54,6 +55,7 @@ export const getVisibleNavItems = (profile) => {
   }
 
   return [
+    { id: "overview", label: "Overview" },
     { id: "pipeline", label: "My Pipeline" },
     { id: "followups", label: "My Follow-ups" },
     { id: "requests", label: "My Requests" },

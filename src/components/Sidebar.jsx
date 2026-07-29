@@ -8,6 +8,7 @@ import {
   Table2,
   Users,
   Sparkles,
+  LayoutDashboard,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -23,6 +24,7 @@ const upcomingFeatures = [
 ];
 
 const icons = {
+  overview: LayoutDashboard,
   pipeline: Table2,
   invoicing: ReceiptText,
   approvals: CheckSquare,
@@ -46,12 +48,12 @@ export default function Sidebar({
     <div className="flex h-full flex-col px-4 py-5">
       <div className="mb-7">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-700 text-sm font-extrabold text-white dark:bg-teal-400 dark:text-zinc-950">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent)] text-sm font-semibold text-white">
             RO
           </div>
           <div>
-            <p className="text-base font-extrabold text-primary">RecruitOps</p>
-            <p className="text-xs font-semibold text-secondary">{organisationName}</p>
+            <p className="text-base font-semibold text-primary">RecruitOps</p>
+            <p className="text-xs font-medium text-secondary">{organisationName}</p>
           </div>
         </div>
         <p className="mt-3 text-xs leading-5 text-secondary">
@@ -70,9 +72,9 @@ export default function Sidebar({
               key={item.id}
               type="button"
               onClick={() => onNavigate(item.id)}
-              className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm font-bold transition ${
+              className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm font-medium transition ${
                 active
-                  ? "bg-teal-50 text-teal-800 dark:bg-zinc-800 dark:text-teal-300"
+                  ? "bg-[var(--accent-soft)] text-[var(--accent)]"
                   : "text-secondary hover:bg-raised hover:text-primary"
               }`}
             >
@@ -105,7 +107,7 @@ export default function Sidebar({
             {upcomingFeatures.map((feature) => (
               <div key={feature} className="flex items-start justify-between gap-2 rounded-md px-2 py-1.5 text-xs">
                 <span className="font-semibold leading-5 text-secondary">{feature}</span>
-                <span className="shrink-0 rounded-full bg-zinc-100 px-1.5 py-0.5 text-[10px] font-extrabold uppercase text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">Planned</span>
+                <span className="shrink-0 rounded-full bg-zinc-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">Planned</span>
               </div>
             ))}
           </div>
