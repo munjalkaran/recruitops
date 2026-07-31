@@ -4,7 +4,8 @@ import AuthPage from "./components/AuthPage";
 import Toolbar from "./components/Toolbar";
 import CandidateGrid from "./components/CandidateGrid";
 import InvoiceSection from "./components/InvoiceSection";
-import AskSheetBar from "./components/AskSheetBar";
+import AskAIPanel from "./components/AskAIPanel";
+import { interpretRecruitOpsQuestion } from "./services/askRecruitOpsService";
 import ChangeRequestDialog from "./components/ChangeRequestDialog";
 import EmailDraftDialog from "./components/EmailDraftDialog";
 import DuplicateWarningDialog from "./components/DuplicateWarningDialog";
@@ -15,6 +16,14 @@ import MyRequestsPage from "./components/MyRequestsPage";
 import TeamPage from "./components/TeamPage";
 import SettingsPage from "./components/SettingsPage";
 import OverviewPage from "./components/OverviewPage";
+import VacanciesPage from "./components/VacanciesPage";
+import InterviewsPage from "./components/InterviewsPage";
+import CandidateDetailsDialog from "./components/CandidateDetailsDialog";
+import ConfirmationDialog from "./components/ConfirmationDialog";
+import Modal from "./components/Modal";
+import { listVacancies, createVacancy, updateVacancy } from "./services/vacancyService";
+import { createInterview, updateInterview } from "./services/interviewService";
+import { createSavedView, deleteSavedView } from "./services/savedViewService";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { useAuth } from "./contexts/AuthContext";
 import {
@@ -26,6 +35,8 @@ import {
   ROLES,
 } from "./constants/pipeline";
 import { mockCandidates } from "./data/mockCandidates";
+import { mockVacancies } from "./data/mockVacancies";
+import { mockInterviews } from "./data/mockInterviews";
 import {
   hasSupabaseConfig,
   isDemoEnabled,
@@ -48,8 +59,14 @@ import {
 } from "./utils/candidateUtils";
 import { buildCandidateEmailDraft } from "./utils/emailTemplates";
 import { findDuplicateWarnings } from "./utils/duplicateUtils";
+import { buildCandidateActivity } from "./utils/activity";
+import { downloadInvoicePdf } from "./utils/invoicePdf";
+import { deriveDocumentStatus } from "./utils/documentChecklist";
+import { pageFromPath, pathFromPage, ROUTE_PAGES } from "./utils/routing";
 import { excludeRemovedDemoCandidates, getCandidatesVisibleToProfile } from "./utils/demoData";
 import { removeDemoData, restoreDemoData } from "./services/demoDataService";
+import { resolveDemoRows, shouldUseDemoFallback } from "./services/demoFallback";
+import { getPermanentDeleteErrorMessage } from "./utils/permanentDelete";
 import {
   canAccessInvoicing,
   canAccessPage,
@@ -80,10 +97,14 @@ const pageTitles = {
   approvals: "Approvals",
   archived: "Archived Candidates",
   team: "Team",
-  settings: "Settings",
+  administration: "Administration",
   followups: "My Follow-ups",
   requests: "My Requests",
+  vacancies: "Vacancies",
+  interviews: "Interviews",
 };
+
+const routePages = new Set([...Object.keys(pageTitles), ...ROUTE_PAGES]);
 
 const BANK_TOKEN_STOP_WORDS = ["bank", "finance"];
 
@@ -135,23 +156,36 @@ export default function App() {
   const [profiles, setProfiles] = useState(() => (isDemoEnabled && !hasSupabaseConfig ? DEMO_PROFILES : []));
   const [candidates, setCandidates] = useState(() => (isDemoEnabled && !hasSupabaseConfig ? mockCandidates : []));
   const [changeRequests, setChangeRequests] = useState(() => (isDemoEnabled && !hasSupabaseConfig ? demoRequests : []));
+  const [vacancies, setVacancies] = useState(() => (isDemoEnabled && !hasSupabaseConfig ? mockVacancies : []));
+  const [vacanciesError, setVacanciesError] = useState("");
+  const [interviews, setInterviews] = useState(() => (isDemoEnabled && !hasSupabaseConfig ? mockInterviews : []));
+  const [interviewsError, setInterviewsError] = useState("");
+  const [auditRows, setAuditRows] = useState([]);
+  const [activityRows, setActivityRows] = useState([]);
+  const [savedViews, setSavedViews] = useState([]);
+  const [billingSettings, setBillingSettings] = useState({});
   const [dataLoading, setDataLoading] = useState(false);
-  const [activePage, setActivePage] = useState("overview");
+  const [activePage, setActivePage] = useState(() => pageFromPath(window.location.pathname));
   const [searchTerm, setSearchTerm] = useState("");
   const [recruiterFilter, setRecruiterFilter] = useState("all");
   const [stageFilter, setStageFilter] = useState(null);
   const [staleOnly, setStaleOnly] = useState(false);
   const [notice, setNotice] = useState("");
-  const [askInput, setAskInput] = useState("");
-  const [askResponse, setAskResponse] = useState("");
+  const [askPanelOpen, setAskPanelOpen] = useState(false);
   const [requestDialog, setRequestDialog] = useState(null);
   const [emailDraft, setEmailDraft] = useState(null);
   const [duplicateDialog, setDuplicateDialog] = useState(null);
+  const [candidateDetails, setCandidateDetails] = useState(null);
+  const [confirmationDialog, setConfirmationDialog] = useState(null);
+  const [reviewDialog, setReviewDialog] = useState(null);
+  const [interviewConfirmation, setInterviewConfirmation] = useState(null);
+  const [scheduleInterviewCandidateId, setScheduleInterviewCandidateId] = useState("");
   const [importRows, setImportRows] = useState(null);
   const [resumeDialogOpen, setResumeDialogOpen] = useState(false);
   const [demoStatus, setDemoStatus] = useState(null);
   const [demoActionBusy, setDemoActionBusy] = useState(false);
   const [dismissedDuplicateKeys, setDismissedDuplicateKeys] = useState(new Set());
+  const demoExtensionsSeededRef = useRef(false);
   const fileInputRef = useRef(null);
 
   const activeProfile = profile || (demoMode ? DEMO_PROFILES[0] : null);
@@ -162,6 +196,12 @@ export default function App() {
     document.documentElement.classList.toggle("dark", theme === "dark");
     window.localStorage.setItem("recruitops-theme", theme);
   }, [theme]);
+
+  useEffect(() => {
+    const onPopState = () => setActivePage(pageFromPath(window.location.pathname));
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
 
   const showNotice = (message) => {
     setNotice(message);
@@ -180,6 +220,12 @@ export default function App() {
         profilesResult,
         candidatesResult,
         requestsResult,
+        vacanciesResult,
+        interviewsResult,
+        auditResult,
+        activityResult,
+        savedViewsResult,
+        billingResult,
         demoStatusResult,
       ] = await Promise.all([
         supabase.from("organisations").select("*").eq("id", profileOverride.organisation_id).single(),
@@ -198,18 +244,25 @@ export default function App() {
           .from("candidate_change_requests")
           .select("*")
           .order("created_at", { ascending: false }),
+        supabase.from("vacancies").select("*, candidates(id)").order("updated_at", { ascending: false }),
+        supabase.from("interviews").select("*").order("scheduled_at", { ascending: true }),
+        supabase.from("candidate_audit_log").select("*").order("created_at", { ascending: false }),
+        supabase.from("candidate_activity").select("*").order("created_at", { ascending: false }),
+        supabase.from("saved_views").select("*").order("updated_at", { ascending: false }),
+        supabase.from("billing_settings").select("*").eq("organisation_id", profileOverride.organisation_id).maybeSingle(),
         isAdmin(profileOverride)
           ? supabase.rpc("get_demo_data_status")
           : Promise.resolve({ data: [], error: null }),
       ]);
 
+      const sampleDataActive = demoStatusResult.data?.[0]?.status === "active";
+      const allowDevelopmentFallback = Boolean(isDemoEnabled || demoMode || (vacanciesResult.error && interviewsResult.error));
       const firstError = [
         organisationResult.error,
         settingsResult.error,
         profilesResult.error,
-        candidatesResult.error,
+        candidatesResult.error && !(import.meta.env.DEV && allowDevelopmentFallback) ? candidatesResult.error : null,
         requestsResult.error,
-        demoStatusResult.error,
       ].find(Boolean);
 
       if (firstError) {
@@ -221,8 +274,32 @@ export default function App() {
       setOrganisation(organisationResult.data);
       setSettings(settingsResult.data || DEMO_ORGANISATION_SETTINGS);
       setProfiles(profilesResult.data || []);
-      setCandidates(excludeRemovedDemoCandidates(candidatesResult.data || []));
+      const useDemoFallback = shouldUseDemoFallback({
+        development: import.meta.env.DEV,
+        allowDevelopmentFallback,
+        sampleDataActive,
+        collections: [
+          { rows: candidatesResult.data || [], error: candidatesResult.error },
+          { rows: vacanciesResult.data || [], error: vacanciesResult.error },
+          { rows: interviewsResult.data || [], error: interviewsResult.error },
+        ],
+      });
+      const useCandidateFallback = useDemoFallback;
+      const useVacancyFallback = useDemoFallback;
+      const useInterviewFallback = useDemoFallback;
+      setCandidates(excludeRemovedDemoCandidates(resolveDemoRows(candidatesResult.data || [], mockCandidates, useCandidateFallback)));
       setChangeRequests(requestsResult.data || []);
+      setVacancies(resolveDemoRows(vacanciesResult.data || [], mockVacancies, useVacancyFallback));
+      setVacanciesError(vacanciesResult.error && !useVacancyFallback ? "Vacancies are not available yet because the database update has not been applied." : "");
+      setInterviews(resolveDemoRows(interviewsResult.data || [], mockInterviews, useInterviewFallback));
+      setInterviewsError(interviewsResult.error && !useInterviewFallback ? "Interview management will be available after the interview database update is applied." : "");
+      if (vacanciesResult.error && import.meta.env.DEV && !useVacancyFallback) console.error("RecruitOps vacancies query failed", vacanciesResult.error);
+      setAuditRows(auditResult.data || []);
+      setActivityRows(activityResult.data || []);
+      setSavedViews(savedViewsResult.data || []);
+      setBillingSettings(billingResult.data || {});
+      if (savedViewsResult.error && import.meta.env.DEV) console.warn("Telora saved views are unavailable until the workflow migration is applied.");
+      if (billingResult.error && import.meta.env.DEV) console.warn("Telora billing settings are unavailable until the workflow migration is applied.");
       setDemoStatus(demoStatusResult.data?.[0] || null);
       setDataLoading(false);
     },
@@ -232,6 +309,32 @@ export default function App() {
   useEffect(() => {
     if (profile && !demoMode) refreshData(profile);
   }, [demoMode, profile, refreshData]);
+
+  useEffect(() => {
+    if (!supabase || demoMode || !activeProfile || !isAdmin(activeProfile) || demoStatus?.status !== "active" || demoExtensionsSeededRef.current) return;
+    demoExtensionsSeededRef.current = true;
+    supabase.rpc("seed_demo_extensions_for_current_organisation").then(async ({ error }) => {
+      if (error && import.meta.env.DEV) console.error("Telora demo extension seed failed", error);
+      if (!error) {
+        const workflowResult = await supabase.rpc("seed_demo_candidate_workflow_for_current_organisation");
+        if (workflowResult.error && import.meta.env.DEV) console.error("Telora demo candidate workflow seed failed", workflowResult.error);
+        refreshData(activeProfile);
+      }
+    });
+  }, [activeProfile, demoMode, demoStatus, refreshData]);
+
+  useEffect(() => {
+    if (!activeProfile) return;
+    const rawPage = String(window.location.pathname || "").replace(/^\/+|\/+$/g, "");
+    if (rawPage === "settings") {
+      window.history.replaceState({}, "", "/administration");
+    }
+    if ((!routePages.has(rawPage) && rawPage !== "settings") || !canAccessPage(activeProfile, activePage)) {
+      const fallbackPage = getVisibleNavItems(activeProfile)[0]?.id || "overview";
+      setActivePage(fallbackPage);
+      window.history.replaceState({}, "", pathFromPage(fallbackPage));
+    }
+  }, [activePage, activeProfile]);
 
   useEffect(() => {
     if (!supabase || demoMode || !activeProfile) return undefined;
@@ -247,6 +350,9 @@ export default function App() {
         () => refreshData(),
       )
       .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () =>
+        refreshData(),
+      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "interviews" }, () =>
         refreshData(),
       )
       .subscribe();
@@ -349,9 +455,13 @@ export default function App() {
   const handleSignOut = async () => {
     if (demoMode) {
       setDemoMode(false);
+      setActivePage("overview");
+      window.history.replaceState({}, "", "/overview");
       return;
     }
     await signOut();
+    setActivePage("overview");
+    window.history.replaceState({}, "", "/login");
   };
 
   const handleChangePassword = () => {
@@ -364,6 +474,7 @@ export default function App() {
       return;
     }
     setActivePage(page);
+    window.history.pushState({}, "", pathFromPage(page));
   };
 
   const runCandidateUpdate = async (id, field, value) => {
@@ -383,9 +494,12 @@ export default function App() {
     }
 
     const update = { [field]: value };
+    const extensionFields = ["vacancy_id","relevant_experience","current_ctc","expected_ctc","current_location","preferred_location","grade","notice_period_days","last_working_date","past_client_association","offer_status","offered_ctc","final_ctc","offer_date","offer_accepted_date","resignation_date","expected_joining_date","actual_joining_date","joining_risk","joining_notes","document_checklist","retention_period_days","retention_start_date","retention_due_date","retention_status","replacement_guarantee_end_date","invoice_eligibility_date"];
     const result =
       isAdmin(activeProfile) && field !== "owner_id"
         ? await supabase.from("candidates").update(update).eq("id", id)
+        : extensionFields.includes(field)
+          ? await supabase.rpc("update_candidate_profile_extensions", { p_candidate_id: id, p_updates: update })
         : field === "owner_id"
           ? await supabase.rpc("assign_candidate_owner", {
               p_candidate_id: id,
@@ -401,6 +515,26 @@ export default function App() {
       return;
     }
     await refreshData();
+  };
+
+  const saveCandidateDetails = async (updates) => {
+    if (!candidateDetails?.candidate) return false;
+    const normalizedUpdates = updates.document_checklist ? { ...updates, docs_status: deriveDocumentStatus(updates.document_checklist) } : updates;
+    if (demoMode || !supabase) {
+      setCandidates((current) => current.map((item) => item.id === candidateDetails.candidate.id ? { ...item, ...normalizedUpdates, updated_at: new Date().toISOString() } : item));
+      showNotice("Candidate profile updated.");
+      return true;
+    }
+    const result = isAdmin(activeProfile)
+      ? await supabase.from("candidates").update(normalizedUpdates).eq("id", candidateDetails.candidate.id)
+      : await supabase.rpc("update_candidate_profile_extensions", { p_candidate_id: candidateDetails.candidate.id, p_updates: normalizedUpdates });
+    if (result.error) {
+      showNotice(friendlySupabaseError(result.error));
+      return false;
+    }
+    await refreshData();
+    showNotice("Candidate profile updated.");
+    return true;
   };
 
   const addCandidate = async () => {
@@ -437,14 +571,10 @@ export default function App() {
       showNotice("You do not have permission to archive this candidate.");
       return;
     }
-    if (
-      !window.confirm(
-        "Archive this candidate? The record will leave your active pipeline but its history will be retained.",
-      )
-    ) {
-      return;
-    }
+    setConfirmationDialog({ type: "archive", candidate, busy: false });
+  };
 
+  const performArchiveCandidate = async (candidate) => {
     if (demoMode || !supabase) {
       setCandidates((current) =>
         current.map((item) =>
@@ -459,6 +589,7 @@ export default function App() {
         ),
       );
       showNotice("Candidate archived. Contact an Admin if the record needs to be restored or permanently deleted.");
+      setConfirmationDialog(null);
       return;
     }
 
@@ -469,11 +600,16 @@ export default function App() {
     else {
       await refreshData();
       showNotice("Candidate archived. Contact an Admin if the record needs to be restored or permanently deleted.");
+      setConfirmationDialog(null);
     }
   };
 
   const restoreCandidate = async (candidate) => {
     if (!canRestoreCandidate(activeProfile)) return;
+    setConfirmationDialog({ type: "restore", candidate, busy: false });
+  };
+
+  const performRestoreCandidate = async (candidate) => {
     if (demoMode || !supabase) {
       setCandidates((current) =>
         current.map((item) =>
@@ -483,6 +619,7 @@ export default function App() {
         ),
       );
       showNotice("Candidate restored.");
+      setConfirmationDialog(null);
       return;
     }
 
@@ -493,30 +630,35 @@ export default function App() {
     else {
       await refreshData();
       showNotice("Candidate restored.");
+      setConfirmationDialog(null);
     }
   };
 
   const deleteCandidate = async (candidate) => {
     if (!canPermanentlyDeleteCandidate(activeProfile, candidate)) return;
-    const confirmation = window.prompt(
-      `Permanently delete ${candidate.name}? Type PERMANENTLY DELETE to confirm.`,
-    );
-    if (confirmation !== "PERMANENTLY DELETE") return;
+    setConfirmationDialog({ type: "delete", candidate, busy: false });
+  };
 
+  const performDeleteCandidate = async (candidate) => {
     if (demoMode || !supabase) {
       setCandidates((current) => current.filter((item) => item.id !== candidate.id));
       showNotice("Candidate permanently deleted in demo data.");
+      setConfirmationDialog(null);
       return;
     }
 
     const { error } = await supabase.rpc("permanently_delete_candidate", {
       p_candidate_id: candidate.id,
-      p_confirmation: confirmation,
+      p_confirmation: "PERMANENTLY DELETE",
     });
-    if (error) showNotice(friendlySupabaseError(error));
+    if (error) {
+      if (import.meta.env.DEV) console.error("Telora permanent candidate deletion failed", error);
+      setConfirmationDialog((current) => (current ? { ...current, error: getPermanentDeleteErrorMessage(error) } : current));
+    }
     else {
       await refreshData();
       showNotice("Candidate permanently deleted.");
+      setConfirmationDialog(null);
     }
   };
 
@@ -564,11 +706,15 @@ export default function App() {
   };
 
   const reviewChangeRequest = async (request, decision) => {
-    const reviewComment =
-      decision === "rejected"
-        ? window.prompt("Add an Admin comment for this rejection.") || ""
-        : "";
+    if (decision === "rejected") {
+      setReviewDialog({ request, decision, comment: "", busy: false });
+      return;
+    }
 
+    await performReviewChangeRequest(request, decision, "");
+  };
+
+  const performReviewChangeRequest = async (request, decision, reviewComment = "") => {
     if (demoMode || !supabase) {
       setChangeRequests((current) =>
         current.map((item) =>
@@ -593,6 +739,7 @@ export default function App() {
         );
       }
       showNotice(`Change request ${decision}.`);
+      setReviewDialog(null);
       return;
     }
 
@@ -605,6 +752,7 @@ export default function App() {
     else {
       await refreshData();
       showNotice(`Change request ${decision}.`);
+      setReviewDialog(null);
     }
   };
 
@@ -691,6 +839,13 @@ export default function App() {
     showNotice("Downloaded invoice CSV for Joined candidates.");
   };
 
+  const downloadInvoicePdfFile = () => {
+    const groups = groupInvoiceByBank(candidates);
+    const invoiceDate = new Date().toISOString().slice(0, 10).replaceAll("-", "");
+    downloadInvoicePdf({ groups, billingSettings, organisationName, invoiceNumber: `${billingSettings.invoice_prefix || "TELORA"}-${invoiceDate}-001` });
+    showNotice("Downloaded invoice PDF. Tax details are included only when configured in billing settings.");
+  };
+
   const markJoinedAsInvoiced = async () => {
     if (!canAccessInvoicing(activeProfile)) return;
 
@@ -747,7 +902,7 @@ export default function App() {
   const saveSettings = async (nextSettings) => {
     if (demoMode || !supabase) {
       setSettings(nextSettings);
-      showNotice("Settings saved in demo mode.");
+      showNotice("Administration changes saved in sample mode.");
       return;
     }
 
@@ -758,8 +913,145 @@ export default function App() {
     if (error) showNotice(friendlySupabaseError(error));
     else {
       await refreshData();
-      showNotice("Settings saved.");
+      showNotice("Administration changes saved.");
     }
+  };
+
+  const saveBillingSettings = async (nextBillingSettings) => {
+    if (demoMode || !supabase) {
+      setBillingSettings(nextBillingSettings);
+      showNotice("Billing settings saved in demo mode.");
+      return;
+    }
+    const result = await supabase.from("billing_settings").upsert({ ...nextBillingSettings, organisation_id: activeProfile.organisation_id }).select("*").single();
+    if (result.error) showNotice(friendlySupabaseError(result.error));
+    else {
+      setBillingSettings(result.data || nextBillingSettings);
+      showNotice("Billing settings saved.");
+    }
+  };
+
+  const saveSavedView = async ({ name, filters }) => {
+    const cleanName = String(name || "").trim();
+    if (!cleanName) return;
+    const local = { id: crypto.randomUUID(), name: cleanName, page: "pipeline", filters, is_shared: false, owner_id: activeProfile.id, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+    if (demoMode || !supabase) {
+      setSavedViews((current) => [local, ...current]);
+      showNotice(`Saved view “${cleanName}”.`);
+      return;
+    }
+    try {
+      const saved = await createSavedView(supabase, { organisation_id: activeProfile.organisation_id, owner_id: activeProfile.id, name: cleanName, page: "pipeline", filters, is_shared: false });
+      setSavedViews((current) => [saved, ...current]);
+      showNotice(`Saved view “${cleanName}”.`);
+    } catch (error) {
+      showNotice(/relation .*saved_views|does not exist|42P01/i.test(error?.message || "") ? "Saved views will be available after the database update is applied." : friendlySupabaseError(error));
+    }
+  };
+
+  const removeSavedView = async (view) => {
+    if (demoMode || !supabase) {
+      setSavedViews((current) => current.filter((item) => item.id !== view.id));
+      return;
+    }
+    try {
+      await deleteSavedView(supabase, view.id);
+      setSavedViews((current) => current.filter((item) => item.id !== view.id));
+    } catch (error) {
+      showNotice(friendlySupabaseError(error));
+    }
+  };
+
+  const saveVacancy = async (id, payload) => {
+    if (demoMode || !supabase) {
+      const local = { ...payload, id: id || crypto.randomUUID(), organisation_id: activeProfile.organisation_id, candidates: [], updated_at: new Date().toISOString() };
+      setVacancies((current) => id ? current.map((v) => v.id === id ? { ...v, ...local } : v) : [local, ...current]);
+      showNotice(id ? "Vacancy updated." : "Vacancy created.");
+      return;
+    }
+    try { const saved = id ? await updateVacancy(id, payload) : await createVacancy({ ...payload, organisation_id: activeProfile.organisation_id }); setVacancies((current) => id ? current.map((v) => v.id === id ? { ...v, ...saved } : v) : [saved, ...current]); showNotice(id ? "Vacancy updated." : "Vacancy created."); }
+    catch (error) { showNotice(/does not exist|42P01|relation .*vacancies/i.test(error?.message || "") ? "Vacancies are not available yet because the database update has not been applied." : friendlySupabaseError(error)); }
+  };
+
+  const buildInterviewPayload = (payload, extra = {}) => ({
+    ...payload,
+    ...extra,
+    candidate: undefined,
+    vacancy: undefined,
+    organisation_id: activeProfile.organisation_id,
+    created_by: payload.created_by || activeProfile.id,
+    scheduled_at: payload.scheduled_date && payload.scheduled_time
+      ? new Date(`${payload.scheduled_date}T${payload.scheduled_time}`).toISOString()
+      : null,
+  });
+
+  const saveInterview = async (payload) => {
+    const next = buildInterviewPayload(payload);
+    if (demoMode || !supabase) {
+      const local = { ...next, id: crypto.randomUUID(), candidates: undefined, vacancies: undefined, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+      setInterviews((current) => [...current, local].sort((a, b) => String(a.scheduled_at).localeCompare(String(b.scheduled_at))));
+      showNotice("Interview scheduled.");
+      return local;
+    }
+    try {
+      const saved = await createInterview(next);
+      setInterviews((current) => [...current, saved].sort((a, b) => String(a.scheduled_at).localeCompare(String(b.scheduled_at))));
+      showNotice("Interview scheduled.");
+      return saved;
+    } catch (error) {
+      showNotice(friendlySupabaseError(error));
+      throw error;
+    }
+  };
+
+  const updateInterviewRecord = async (id, updates) => {
+    const next = { ...updates };
+    if (next.scheduled_date && next.scheduled_time) next.scheduled_at = new Date(`${next.scheduled_date}T${next.scheduled_time}`).toISOString();
+    if (demoMode || !supabase) {
+      setInterviews((current) => current.map((interview) => interview.id === id ? { ...interview, ...next, updated_at: new Date().toISOString() } : interview));
+      showNotice("Interview updated.");
+      return;
+    }
+    try {
+      const saved = await updateInterview(id, next);
+      setInterviews((current) => current.map((interview) => interview.id === id ? saved : interview));
+      showNotice("Interview updated.");
+    } catch (error) {
+      showNotice(friendlySupabaseError(error));
+      throw error;
+    }
+  };
+
+  const requestNoShow = (interview) => setInterviewConfirmation({ interview, busy: false });
+
+  const scheduleInterviewForCandidate = (candidate) => {
+    setCandidateDetails(null);
+    setScheduleInterviewCandidateId(candidate?.id || "");
+    navigate("interviews");
+  };
+
+  const confirmNoShow = async () => {
+    if (!interviewConfirmation || interviewConfirmation.busy) return;
+    setInterviewConfirmation((current) => ({ ...current, busy: true }));
+    try {
+      await updateInterviewRecord(interviewConfirmation.interview.id, {
+        interview_status: "No Show",
+        escalation_required: true,
+        escalation_reason: "Follow-up required after candidate no-show",
+      });
+      setInterviewConfirmation(null);
+    } finally {
+      setInterviewConfirmation((current) => current ? { ...current, busy: false } : current);
+    }
+  };
+
+  const rescheduleInterview = async (interview, payload) => {
+    await updateInterviewRecord(interview.id, {
+      interview_status: "Rescheduled",
+      reschedule_reason: payload.internal_notes || "Replacement interview scheduled",
+    });
+    await saveInterview(buildInterviewPayload(payload, { previous_interview_id: interview.id, interview_status: "Scheduled", feedback_status: "Not Due" }));
+    showNotice("Interview rescheduled and original history retained.");
   };
 
   const handleRemoveDemoData = async () => {
@@ -767,8 +1059,9 @@ export default function App() {
     setDemoActionBusy(true);
     try {
       await removeDemoData();
+      await supabase?.rpc("remove_demo_extensions");
       await refreshData();
-      showNotice("Sample data removed. You can restore it from Settings.");
+      showNotice("Sample data removed. You can restore it from Administration.");
       return true;
     } catch (error) {
       showNotice(friendlySupabaseError(error));
@@ -783,6 +1076,8 @@ export default function App() {
     setDemoActionBusy(true);
     try {
       await restoreDemoData(batchId);
+      await supabase?.rpc("restore_demo_extensions", { p_demo_batch_id: batchId });
+      demoExtensionsSeededRef.current = false;
       await refreshData();
       showNotice("Sample data restored.");
       return true;
@@ -794,8 +1089,8 @@ export default function App() {
     }
   };
 
-  const submitAskCommand = () => {
-    const command = askInput.trim().toLowerCase();
+  const submitAskCommand = (question) => {
+    const command = question.trim().toLowerCase();
     const normalizedCommand = normalizeQueryText(command);
     if (!command) return;
 
@@ -805,8 +1100,7 @@ export default function App() {
       setSearchTerm("");
       setStageFilter(null);
       setStaleOnly(true);
-      setAskResponse(`Showing overdue follow-ups.`);
-      return;
+      return { type: "filter", message: "Showing overdue follow-ups.", action: { kind: "stale" }, suggestions: [] };
     }
 
     const stageMatch = PIPELINE_STAGES.find((stage) => command.includes(stage.toLowerCase()));
@@ -814,8 +1108,7 @@ export default function App() {
       setSearchTerm("");
       setStageFilter(stageMatch);
       setStaleOnly(false);
-      setAskResponse(`Showing ${stageMatch} candidates.`);
-      return;
+      return { type: "filter", message: `Showing ${stageMatch} candidates.`, action: { kind: "stage", value: stageMatch }, suggestions: [] };
     }
 
     const bankMatch = getUniqueBanks(visibleCandidates).find((bank) => {
@@ -832,11 +1125,21 @@ export default function App() {
       setSearchTerm(bankMatch);
       setStageFilter(null);
       setStaleOnly(false);
-      setAskResponse(`Showing candidates matching ${bankMatch}.`);
-      return;
+      return { type: "filter", message: `Showing candidates matching ${bankMatch}.`, action: { kind: "search", value: bankMatch }, suggestions: [] };
     }
 
-    setAskResponse("I could not understand that yet. Try asking for stale candidates, a bank, or a stage.");
+    return interpretRecruitOpsQuestion(question, { candidates: visibleCandidates, profiles, interviews, vacancies });
+  };
+
+  const askRecruitOps = (question) => {
+    const response = submitAskCommand(question);
+    if (response?.action?.kind === "search") { setSearchTerm(response.action.value); setStageFilter(null); setStaleOnly(false); navigate("pipeline"); }
+    if (response?.action?.kind === "stage") { setSearchTerm(""); setStageFilter(response.action.value); setStaleOnly(false); navigate("pipeline"); }
+    if (response?.action?.kind === "stale") { setSearchTerm(""); setStageFilter(null); setStaleOnly(true); navigate(isAdmin(activeProfile) ? "pipeline" : "followups"); }
+    if (response?.action?.kind === "recruiter") { setSearchTerm(""); setRecruiterFilter(response.action.value); setStageFilter(null); setStaleOnly(false); navigate("pipeline"); }
+    if (response?.action?.kind === "interviews") navigate("interviews");
+    if (response?.action?.kind === "vacancies") navigate("vacancies");
+    return response;
   };
 
   const copyEmailText = async () => {
@@ -904,6 +1207,10 @@ export default function App() {
       if (!isAdmin(activeProfile)) setStageFilter("Joined");
       return;
     }
+    if (["interviews", "feedbackDue", "noShows"].includes(summary)) {
+      navigate("interviews");
+      return;
+    }
 
     const stageBySummary = {
       interviewing: "Interviewing",
@@ -918,7 +1225,7 @@ export default function App() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-app text-primary">
         <div className="rounded-lg border border-app bg-surface px-5 py-4 text-sm font-bold text-secondary">
-          Checking RecruitOps access...
+          Checking Telora access...
         </div>
       </main>
     );
@@ -966,7 +1273,7 @@ export default function App() {
     if (dataLoading) {
       return (
         <div className="rounded-lg border border-app bg-surface px-5 py-12 text-center text-sm font-semibold text-secondary">
-          Loading RecruitOps data...
+          Loading Telora data...
         </div>
       );
     }
@@ -974,6 +1281,7 @@ export default function App() {
       return (
         <OverviewPage
           candidates={visibleCandidates}
+          interviews={interviews}
           pendingApprovalsCount={pendingApprovalsCount}
           profile={activeProfile}
           demoStatus={demoStatus}
@@ -985,13 +1293,22 @@ export default function App() {
         />
       );
     }
+    if (activePage === "vacancies") {
+      return <VacanciesPage vacancies={vacancies} vacanciesError={vacanciesError} profiles={profiles} activeProfile={activeProfile} candidates={visibleCandidates} interviews={interviews} onSave={saveVacancy} onUpdateCandidate={runCandidateUpdate} />;
+    }
+    if (activePage === "interviews") {
+      return <InterviewsPage interviews={interviews} candidates={visibleCandidates} vacancies={vacancies} profiles={profiles} activeProfile={activeProfile} initialCandidateId={scheduleInterviewCandidateId} error={interviewsError} onRetry={() => refreshData()} onCreate={saveInterview} onUpdate={updateInterviewRecord} onNoShow={requestNoShow} onReschedule={rescheduleInterview} />;
+    }
     if (activePage === "invoicing") {
       return (
         <InvoiceSection
           candidates={candidates}
           profiles={profiles}
           onDownloadInvoice={downloadInvoiceCsv}
+          onDownloadInvoicePdf={downloadInvoicePdfFile}
           onMarkInvoiced={markJoinedAsInvoiced}
+          billingSettings={billingSettings}
+          organisationName={organisationName}
         />
       );
     }
@@ -1025,6 +1342,9 @@ export default function App() {
           onOpenDuplicate={(candidate, warning) => setDuplicateDialog({ candidate, warning })}
           onDismissDuplicate={dismissDuplicate}
           onLinkDuplicate={linkDuplicate}
+          onOpenDetails={(candidate) => setCandidateDetails({ candidate, mode: "view" })}
+          onEditCandidate={(candidate) => setCandidateDetails({ candidate, mode: "edit" })}
+          vacancies={vacancies}
           emptyMessage="No archived candidates found."
           archivedMode
         />
@@ -1041,7 +1361,7 @@ export default function App() {
       );
     }
 
-    if (activePage === "settings") {
+    if (activePage === "administration") {
       return (
         <SettingsPage
           settings={settings}
@@ -1050,6 +1370,10 @@ export default function App() {
           demoBusy={demoActionBusy}
           onRemoveDemo={handleRemoveDemoData}
           onRestoreDemo={handleRestoreDemoData}
+          theme={theme}
+          onToggleTheme={() => setTheme((current) => (current === "dark" ? "light" : "dark"))}
+          billingSettings={billingSettings}
+          onSaveBilling={saveBillingSettings}
         />
       );
     }
@@ -1061,7 +1385,7 @@ export default function App() {
     const gridRows = activePage === "followups" ? followUpCandidates : filteredCandidates;
 
     return (
-      <div className="page-enter space-y-4">
+      <div className="page-enter flex min-h-0 flex-1 flex-col space-y-4">
         <Toolbar
           searchTerm={searchTerm}
           recruiterFilter={recruiterFilter}
@@ -1086,6 +1410,18 @@ export default function App() {
           onImportClick={() => fileInputRef.current?.click()}
           onExport={exportFilteredRows}
           onResumeImport={() => setResumeDialogOpen(true)}
+          savedViews={savedViews}
+          onSaveView={saveSavedView}
+          onDeleteView={removeSavedView}
+          onApplyView={(view) => {
+            const filters = view.filters || {};
+            setSearchTerm(filters.searchTerm || "");
+            setRecruiterFilter(filters.recruiterFilter || "all");
+            setStageFilter(filters.stageFilter || null);
+            setStaleOnly(Boolean(filters.staleOnly));
+            showNotice(`Applied saved view “${view.name}”.`);
+          }}
+          currentViewFilters={{ searchTerm, recruiterFilter, stageFilter, staleOnly }}
         />
         <CandidateGrid
           candidates={gridRows}
@@ -1103,14 +1439,71 @@ export default function App() {
           onOpenDuplicate={(candidate, warning) => setDuplicateDialog({ candidate, warning })}
           onDismissDuplicate={dismissDuplicate}
           onLinkDuplicate={linkDuplicate}
+          onOpenDetails={(candidate) => setCandidateDetails({ candidate, mode: "view" })}
+          onEditCandidate={(candidate) => setCandidateDetails({ candidate, mode: "edit" })}
+          vacancies={vacancies}
           emptyMessage={
             activePage === "followups"
               ? "No assigned follow-ups are due."
               : "No candidates match the current filters."
           }
+          fillHeight
         />
       </div>
     );
+  };
+
+  const confirmationCopy = confirmationDialog
+    ? {
+        archive: {
+          title: `Archive ${confirmationDialog.candidate.name || "candidate"}?`,
+          message: "The record will leave the active pipeline but its history will be retained.",
+          confirmLabel: "Archive candidate",
+          destructive: false,
+          action: performArchiveCandidate,
+        },
+        restore: {
+          title: `Restore ${confirmationDialog.candidate.name || "candidate"} to the active pipeline?`,
+          message: "The candidate will be visible in the active pipeline again.",
+          confirmLabel: "Restore candidate",
+          destructive: false,
+          action: performRestoreCandidate,
+        },
+        delete: {
+          title: `Permanently delete ${confirmationDialog.candidate.name || "candidate"}?`,
+          message: "This cannot be undone.",
+          confirmLabel: "Delete permanently",
+          destructive: true,
+          action: performDeleteCandidate,
+        },
+      }[confirmationDialog.type]
+    : null;
+
+  const confirmCandidateAction = async () => {
+    if (!confirmationDialog || confirmationDialog.busy || !confirmationCopy) return;
+    const candidate = confirmationDialog.candidate;
+    setConfirmationDialog((current) => (current ? { ...current, busy: true, error: "" } : current));
+    try {
+      await confirmationCopy.action(candidate);
+    } finally {
+      setConfirmationDialog((current) =>
+        current?.candidate?.id === candidate.id ? { ...current, busy: false } : current,
+      );
+    }
+  };
+
+  const submitRejection = async (event) => {
+    event.preventDefault();
+    if (!reviewDialog || reviewDialog.busy) return;
+    const { request, decision, comment } = reviewDialog;
+    setReviewDialog((current) => (current ? { ...current, busy: true } : current));
+    try {
+      await performReviewChangeRequest(request, decision, comment || "");
+    } finally {
+      setReviewDialog((current) =>
+        current?.request?.id === request.id ? { ...current, busy: false } : current,
+      );
+    }
   };
 
   return (
@@ -1119,13 +1512,12 @@ export default function App() {
       activePage={activePage}
       navItems={navItems}
       onNavigate={navigate}
-      pageTitle={pageTitles[activePage] || "RecruitOps"}
+      pageTitle={pageTitles[activePage] || "Telora"}
       profile={activeProfile}
       organisationName={organisationName}
-      theme={theme}
-      onToggleTheme={() => setTheme((current) => (current === "dark" ? "light" : "dark"))}
       onSignOut={handleSignOut}
       onChangePassword={handleChangePassword}
+      onAskAI={() => setAskPanelOpen(true)}
       pendingApprovalsCount={isAdmin(activeProfile) ? pendingApprovalsCount : 0}
       isDemoMode={demoMode}
     >
@@ -1138,17 +1530,12 @@ export default function App() {
         aria-label="Import CSV file"
       />
       {notice ? (
-        <div className="mb-4 rounded-lg border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-semibold text-teal-800 dark:border-teal-800 dark:bg-teal-950/30 dark:text-teal-200">
+        <div className="glass-panel mb-4 rounded-lg border border-teal-200 px-4 py-2 text-sm font-semibold text-teal-800 dark:border-teal-800 dark:text-teal-200">
           {notice}
         </div>
       ) : null}
       {renderPage()}
-      <AskSheetBar
-        value={askInput}
-        response={askResponse}
-        onChange={setAskInput}
-        onSubmit={submitAskCommand}
-      />
+      {askPanelOpen ? <AskAIPanel onAsk={askRecruitOps} onClose={() => setAskPanelOpen(false)} /> : null}
 
       {requestDialog ? (
         <ChangeRequestDialog
@@ -1197,6 +1584,79 @@ export default function App() {
       ) : null}
 
       {resumeDialogOpen ? <ResumeImportPlaceholder onClose={() => setResumeDialogOpen(false)} /> : null}
+      {confirmationDialog && confirmationCopy ? (
+        <ConfirmationDialog
+          title={confirmationCopy.title}
+          message={confirmationDialog.type === "delete" ? `This will permanently remove ${confirmationDialog.candidate.name || "this candidate"} and cannot be undone.` : confirmationCopy.message}
+          confirmLabel={confirmationCopy.confirmLabel}
+          destructive={confirmationCopy.destructive}
+          confirming={confirmationDialog.busy}
+          error={confirmationDialog.error}
+          onCancel={() => !confirmationDialog.busy && setConfirmationDialog(null)}
+          onConfirm={confirmCandidateAction}
+        />
+      ) : null}
+
+      {interviewConfirmation ? (
+        <ConfirmationDialog
+          title="Mark interview as a no-show?"
+          message="The interview history will be retained and a follow-up will be flagged for the team."
+          confirmLabel="Mark no-show"
+          confirming={interviewConfirmation.busy}
+          onCancel={() => !interviewConfirmation.busy && setInterviewConfirmation(null)}
+          onConfirm={confirmNoShow}
+        />
+      ) : null}
+
+      {reviewDialog ? (
+        <Modal
+          title="Reject change request?"
+          description="Add an Admin comment for this rejection."
+          onClose={() => !reviewDialog.busy && setReviewDialog(null)}
+          busy={reviewDialog.busy}
+          size="max-w-lg"
+          footer={
+            <div className="flex justify-end gap-2">
+              <button type="button" disabled={reviewDialog.busy} onClick={() => setReviewDialog(null)} className="action-button border border-app bg-surface text-secondary hover:bg-raised disabled:opacity-50">
+                Cancel
+              </button>
+              <button form="review-rejection-form" disabled={reviewDialog.busy} className="action-button bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50">
+                {reviewDialog.busy ? "Rejecting..." : "Reject request"}
+              </button>
+            </div>
+          }
+        >
+          <form id="review-rejection-form" onSubmit={submitRejection}>
+            <label className="block text-sm font-medium text-secondary">
+              Admin comment
+              <textarea
+                value={reviewDialog.comment}
+                onChange={(event) => setReviewDialog((current) => ({ ...current, comment: event.target.value }))}
+                rows={4}
+                className="mt-2 w-full rounded-lg border border-app bg-raised px-3 py-2.5 text-sm text-primary outline-none focus:ring-2 focus:ring-[var(--accent-soft)]"
+              />
+            </label>
+          </form>
+        </Modal>
+      ) : null}
+
+      {candidateDetails ? (
+        <CandidateDetailsDialog
+          candidate={candidates.find((candidate) => candidate.id === candidateDetails.candidate.id) || candidateDetails.candidate}
+          vacancies={vacancies}
+          profiles={profiles}
+          activeProfile={activeProfile}
+          duplicateWarnings={(duplicateWarningsByCandidate[candidateDetails.candidate.id] || []).filter(
+            (warning) => !dismissedDuplicateKeys.has(`${candidateDetails.candidate.id}:${warning.candidate.id}`),
+          )}
+          mode={candidateDetails.mode}
+          activities={buildCandidateActivity(candidateDetails.candidate, auditRows, interviews, activityRows)}
+          interviews={interviews.filter((interview) => interview.candidate_id === candidateDetails.candidate.id)}
+          onSave={saveCandidateDetails}
+          onScheduleInterview={scheduleInterviewForCandidate}
+          onClose={() => setCandidateDetails(null)}
+        />
+      ) : null}
       </AppShell>
     </ProtectedRoute>
   );

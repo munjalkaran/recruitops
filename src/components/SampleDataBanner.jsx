@@ -15,7 +15,7 @@ export default function SampleDataBanner({ onRemove, onHide, busy }) {
 
   return (
     <>
-      <div className="mb-4 flex flex-col gap-3 rounded-lg border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-100 sm:flex-row sm:items-center sm:justify-between">
+      <div className="glass-panel mb-4 flex flex-col gap-3 rounded-lg border border-sky-200 px-4 py-3 text-sm text-sky-900 dark:border-sky-900 dark:text-sky-100 sm:flex-row sm:items-center sm:justify-between">
         <p className="font-semibold">
           Sample data is active. Explore the workflow, then remove it before adding real candidates.
         </p>

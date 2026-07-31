@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { LockKeyhole, Mail, ShieldCheck } from "lucide-react";
+import { TeloraFullLogo } from "./TeloraLogo";
 
 export default function AuthPage({
   mode,
@@ -34,15 +35,14 @@ export default function AuthPage({
     <main className="min-h-screen bg-app px-4 py-10 text-primary">
       <div className="mx-auto grid min-h-[calc(100vh-5rem)] max-w-5xl items-center gap-8 lg:grid-cols-[1fr_420px]">
         <section>
-          <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-app bg-surface px-3 py-1.5 text-sm font-bold text-teal-700 dark:text-teal-300">
-            <ShieldCheck size={16} />
-            Hiring Spartans
+          <div className="mb-8">
+            <TeloraFullLogo alt="Telora" />
           </div>
           <h1 className="text-4xl font-semibold tracking-tight text-primary sm:text-5xl">
-            RecruitOps
+            Telora
           </h1>
           <p className="mt-3 text-xl font-semibold text-secondary">
-            From candidate to payment, all in one place
+            Talent, tracked with clarity. Powered by AI.
           </p>
           <p className="mt-5 max-w-2xl text-sm leading-6 text-secondary">
             A secure recruitment operations workspace for staffing teams placing candidates into
@@ -57,7 +57,7 @@ export default function AuthPage({
           </h2>
           <p className="mt-1 text-sm text-secondary">
             {mode === "update"
-              ? "Enter a new password for your RecruitOps account."
+              ? "Enter a new password for your Telora account."
               : "Use your Supabase email/password account for this organisation."}
           </p>
 

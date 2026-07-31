@@ -46,17 +46,21 @@ export const getVisibleNavItems = (profile) => {
     return [
       { id: "overview", label: "Overview" },
       { id: "pipeline", label: "Pipeline" },
+      { id: "vacancies", label: "Vacancies" },
+      { id: "interviews", label: "Interviews" },
       { id: "invoicing", label: "Invoicing" },
       { id: "approvals", label: "Approvals" },
       { id: "archived", label: "Archived" },
       { id: "team", label: "Team" },
-      { id: "settings", label: "Settings" },
+      { id: "administration", label: "Administration" },
     ];
   }
 
   return [
     { id: "overview", label: "Overview" },
     { id: "pipeline", label: "My Pipeline" },
+    { id: "vacancies", label: "My Vacancies" },
+    { id: "interviews", label: "Interviews" },
     { id: "followups", label: "My Follow-ups" },
     { id: "requests", label: "My Requests" },
   ];

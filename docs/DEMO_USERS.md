@@ -1,6 +1,6 @@
 # Demo recruiter users
 
-RecruitOps never creates Supabase Auth passwords from SQL. Create the Auth identities first, then attach their RecruitOps profiles.
+Telora never creates Supabase Auth passwords from SQL. Create the Auth identities first, then attach their Telora profiles.
 
 1. Open **Supabase Dashboard → Authentication → Users**.
 2. Create Priya and Arjun manually and auto-confirm both users.
@@ -27,4 +27,3 @@ select public.seed_hiring_spartans_profile(
 The Auth email and profile email should match. The sample seed resolves these exact profile emails and raises a clear error if either active recruiter profile is missing; it never invents UUIDs and never inserts into `auth.users`.
 
 After the Admin, Priya, and Arjun profiles exist, apply the migrations and run the contents of `supabase/seed.sql` in the SQL Editor. A repeat run does not duplicate data: it returns the active batch, or tells you to restore the removed batch.
-

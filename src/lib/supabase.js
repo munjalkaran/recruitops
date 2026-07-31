@@ -51,8 +51,8 @@ export const friendlySupabaseError = (error) => {
     return "You do not have permission to perform that action.";
   }
   if (/failed to fetch|network/i.test(message)) {
-    return "RecruitOps could not reach Supabase. Please check the project URL and network.";
+    return "Telora could not reach the data service. Please check the project URL and network.";
   }
   if (/invalid login credentials/i.test(message)) return "Email or password is incorrect.";
-  return "RecruitOps could not complete that action. Please check the details and try again.";
+  return "Telora could not complete that action. Please check the details and try again.";
 };

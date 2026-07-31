@@ -1,129 +1,33 @@
-import { FileDown, Search, Upload, UserPlus } from "lucide-react";
+import { Bookmark, ChevronDown, FileDown, Search, Trash2, Upload, UserPlus, X } from "lucide-react";
+import { useState } from "react";
 import { PIPELINE_STAGES } from "../constants/pipeline";
 import { canCreateCandidate, canImportCsv } from "../utils/permissions";
 import StageGuideButton from "./StageGuideButton";
+import useDismissibleSurface from "../hooks/useDismissibleSurface";
 
-export default function Toolbar({
-  searchTerm,
-  recruiterFilter,
-  stageFilter,
-  profiles,
-  activeProfile,
-  shownCount,
-  totalCount,
-  onSearchChange,
-  onRecruiterChange,
-  onStageChange,
-  onClearFilters,
-  onAddCandidate,
-  onImportClick,
-  onExport,
-  onResumeImport,
-}) {
-  return (
-    <div className="rounded-lg border border-app bg-surface p-3">
-      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-        <div className="flex flex-col gap-2 md:flex-row md:items-center">
-          <label className="relative block">
-            <Search
-              size={15}
-              strokeWidth={2.2}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-secondary"
-            />
-            <input
-              value={searchTerm}
-              onChange={(event) => onSearchChange(event.target.value)}
-              placeholder="Search name, bank, role..."
-              className="h-10 w-full rounded-lg border border-app bg-raised py-2 pl-9 pr-3 text-sm text-primary outline-none transition focus:border-teal-300 focus:ring-2 focus:ring-teal-100 dark:focus:border-teal-700 dark:focus:ring-teal-900/60 md:w-80"
-              aria-label="Search candidates"
-            />
-          </label>
-
-          {activeProfile?.role === "admin" ? (
-            <select
-              value={recruiterFilter}
-              onChange={(event) => onRecruiterChange(event.target.value)}
-              className="h-10 rounded-lg border border-app bg-raised px-3 text-sm text-primary outline-none transition focus:border-teal-300 focus:ring-2 focus:ring-teal-100 dark:focus:border-teal-700 dark:focus:ring-teal-900/60"
-              aria-label="Recruiter filter"
-            >
-              <option value="all">All recruiters</option>
-              <option value="unassigned">Unassigned</option>
-              {profiles.map((profile) => (
-                <option key={profile.id} value={profile.id}>
-                  {profile.full_name}
-                </option>
-              ))}
-            </select>
-          ) : null}
-
-          <select
-            value={stageFilter || "all"}
-            onChange={(event) => onStageChange(event.target.value === "all" ? null : event.target.value)}
-            className="h-10 rounded-lg border border-app bg-raised px-3 text-sm text-primary outline-none transition focus:border-teal-300 focus:ring-2 focus:ring-teal-100 dark:focus:border-teal-700 dark:focus:ring-teal-900/60"
-            aria-label="Stage filter"
-          >
-            <option value="all">All stages</option>
-            {PIPELINE_STAGES.map((stage) => (
-              <option key={stage} value={stage}>
-                {stage}
-              </option>
-            ))}
-          </select>
-
-          <StageGuideButton />
-
-          <button
-            type="button"
-            onClick={onClearFilters}
-            className="h-10 rounded-lg px-2 text-sm font-medium text-secondary underline-offset-4 hover:text-primary hover:underline"
-          >
-            Clear filters
-          </button>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {canCreateCandidate(activeProfile) ? (
-            <>
-              <button
-                type="button"
-                onClick={onAddCandidate}
-                className="action-button action-primary"
-              >
-                <UserPlus size={16} />
-                Add Candidate
-              </button>
-              <button
-                type="button"
-                onClick={onResumeImport}
-                className="action-button border border-app bg-surface text-secondary hover:bg-raised hover:text-primary"
-              >
-                Import Resume
-              </button>
-            </>
-          ) : null}
-          {canImportCsv(activeProfile) ? (
-            <button
-              type="button"
-              onClick={onImportClick}
-              className="action-button border border-app bg-surface text-secondary hover:bg-raised hover:text-primary"
-            >
-              <Upload size={16} />
-              Import CSV
-            </button>
-          ) : null}
-          <button
-            type="button"
-            onClick={onExport}
-            className="action-button border border-app bg-surface text-secondary hover:bg-raised hover:text-primary"
-          >
-            <FileDown size={16} />
-            Export to Excel
-          </button>
-          <p className="ml-1 text-sm font-medium text-secondary">
-            {shownCount} of {totalCount} shown
-          </p>
-        </div>
+export default function Toolbar({ searchTerm, recruiterFilter, stageFilter, profiles, activeProfile, shownCount, totalCount, onSearchChange, onRecruiterChange, onStageChange, onClearFilters, onAddCandidate, onImportClick, onExport, onResumeImport, savedViews = [], onSaveView, onDeleteView, onApplyView, currentViewFilters = {} }) {
+  const [openMenu, setOpenMenu] = useState(null);
+  const [viewName, setViewName] = useState("");
+  const exportOpen = openMenu === "export";
+  const savedViewsOpen = openMenu === "saved";
+  const { surfaceRef: menuRef, triggerRef: menuTrigger, close: closeMenu } = useDismissibleSurface(Boolean(openMenu), () => setOpenMenu(null));
+  const hasFilters = Boolean(searchTerm || recruiterFilter !== "all" || stageFilter);
+  return <section className="glass-panel glass-toolbar rounded-xl border p-3">
+    <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+        <label className="relative min-w-[220px] flex-1 md:max-w-sm"><Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-secondary" /><input value={searchTerm} onChange={(event) => onSearchChange(event.target.value)} placeholder="Search name, bank, role..." className="glass-chip h-10 w-full rounded-lg border py-2 pl-9 pr-3 text-sm text-primary outline-none" aria-label="Search candidates" /></label>
+        {activeProfile?.role === "admin" ? <select value={recruiterFilter} onChange={(event) => onRecruiterChange(event.target.value)} className="glass-chip h-10 rounded-lg border px-3 text-sm text-primary outline-none" aria-label="Recruiter filter"><option value="all">All recruiters</option><option value="unassigned">Unassigned</option>{profiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.full_name}</option>)}</select> : null}
+        <select value={stageFilter || "all"} onChange={(event) => onStageChange(event.target.value === "all" ? null : event.target.value)} className="glass-chip h-10 rounded-lg border px-3 text-sm text-primary outline-none" aria-label="Stage filter"><option value="all">All stages</option>{PIPELINE_STAGES.map((stage) => <option key={stage}>{stage}</option>)}</select>
+      </div>
+      <div ref={menuRef} className="flex shrink-0 flex-wrap items-center gap-2">
+        {canCreateCandidate(activeProfile) ? <><button type="button" onClick={onAddCandidate} className="action-button action-primary"><UserPlus size={16} /> Add Candidate</button><button type="button" onClick={onResumeImport} className="glass-control action-button border"><Upload size={15} /> Import Resume</button></> : null}
+        {canImportCsv(activeProfile) ? <button type="button" onClick={onImportClick} className="glass-control action-button border"><Upload size={15} /> Import CSV</button> : null}
+        <div className="relative"><button type="button" ref={menuTrigger} onClick={() => setOpenMenu((current) => current === "export" ? null : "export")} className="glass-control action-button border" aria-expanded={exportOpen}><FileDown size={15} /> Export <ChevronDown size={14} /></button>{exportOpen ? <div className="glass-menu absolute right-0 top-11 z-40 w-56 rounded-lg border p-1.5"><button type="button" onClick={() => { onExport(); closeMenu(); }} className="row-menu-item">Export current view to CSV</button></div> : null}</div>
+        <div className="relative"><button type="button" onClick={() => setOpenMenu((current) => current === "saved" ? null : "saved")} className="glass-control action-button border" aria-expanded={savedViewsOpen}><Bookmark size={15} /> Saved views <ChevronDown size={14} /></button>{savedViewsOpen ? <div className="glass-menu absolute right-0 top-11 z-40 w-72 rounded-lg border p-2"><div className="flex gap-2"><input value={viewName} onChange={(event) => setViewName(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { onSaveView?.({ name: viewName, filters: currentViewFilters }); setViewName(""); } }} placeholder="Name this view" className="h-9 min-w-0 flex-1 rounded-md border border-app bg-raised px-2 text-xs text-primary outline-none" /><button type="button" onClick={() => { onSaveView?.({ name: viewName, filters: currentViewFilters }); setViewName(""); }} className="action-button action-primary px-2 text-xs">Save</button></div>{savedViews.length ? <div className="mt-2 border-t border-app pt-2">{savedViews.map((view) => <div key={view.id} className="flex items-center gap-1 rounded-md px-2 py-1.5 hover:bg-raised"><button type="button" onClick={() => { onApplyView?.(view); closeMenu(); }} className="min-w-0 flex-1 truncate text-left text-xs font-semibold text-primary">{view.name}</button><button type="button" onClick={() => onDeleteView?.(view)} className="rounded p-1 text-secondary hover:bg-surface hover:text-rose-600" aria-label={`Delete saved view ${view.name}`}><Trash2 size={13} /></button></div>)}</div> : <p className="mt-2 text-xs text-secondary">Save your current filters for the next review.</p>}</div> : null}</div>
       </div>
     </div>
-  );
+    <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-app pt-3"><div className="flex flex-wrap items-center gap-2"><span className="text-sm font-medium text-secondary">{shownCount} of {totalCount} candidates</span>{searchTerm ? <FilterChip label={`Search: ${searchTerm}`} onClear={() => onSearchChange("")} /> : null}{recruiterFilter !== "all" ? <FilterChip label="Recruiter filter" onClear={() => onRecruiterChange("all")} /> : null}{stageFilter ? <FilterChip label={`Stage: ${stageFilter}`} onClear={() => onStageChange(null)} /> : null}</div><div className="flex items-center gap-3">{hasFilters ? <button type="button" onClick={onClearFilters} className="text-sm font-semibold text-secondary underline-offset-4 hover:text-primary hover:underline">Clear all filters</button> : null}<StageGuideButton /></div></div>
+  </section>;
 }
+
+function FilterChip({ label, onClear }) { return <span className="glass-chip inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold text-secondary">{label}<button type="button" onClick={onClear} className="rounded-full p-0.5 hover:bg-raised" aria-label={`Clear ${label}`}><X size={12} /></button></span>; }

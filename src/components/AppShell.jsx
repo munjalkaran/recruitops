@@ -2,6 +2,7 @@ import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
+import AskCommandBar from "./AskCommandBar";
 
 export default function AppShell({
   activePage,
@@ -11,12 +12,11 @@ export default function AppShell({
   pageTitle,
   profile,
   organisationName,
-  theme,
-  onToggleTheme,
   onSignOut,
   onChangePassword,
   pendingApprovalsCount,
   isDemoMode,
+  onAskAI,
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -30,7 +30,7 @@ export default function AppShell({
       <button
         type="button"
         onClick={() => setDrawerOpen(true)}
-        className="fixed left-4 top-4 z-40 inline-flex h-10 w-10 items-center justify-center rounded-lg border border-app bg-surface text-primary shadow-sm lg:hidden"
+        className="glass-control fixed left-4 top-4 z-40 inline-flex h-10 w-10 items-center justify-center rounded-lg border text-primary shadow-sm lg:hidden"
         aria-label="Open navigation"
       >
         <Menu size={18} />
@@ -54,7 +54,7 @@ export default function AppShell({
             aria-label="Close navigation"
             onClick={() => setDrawerOpen(false)}
           />
-          <aside className="relative h-full w-72 border-r border-app bg-sidebar">
+          <aside className="glass-modal relative h-full w-72 border-r border-app bg-sidebar">
             <button
               type="button"
               onClick={() => setDrawerOpen(false)}
@@ -74,19 +74,18 @@ export default function AppShell({
         </div>
       ) : null}
 
-      <div className="lg:pl-64">
+      <div className="flex min-h-screen min-w-0 flex-col lg:pl-64">
         <Header
           pageTitle={pageTitle}
           profile={profile}
           organisationName={organisationName}
-          theme={theme}
-          onToggleTheme={onToggleTheme}
           onSignOut={onSignOut}
           onChangePassword={onChangePassword}
           isDemoMode={isDemoMode}
         />
-        <main className="px-4 pb-36 pt-6 sm:px-6 lg:px-10 lg:pt-8">{children}</main>
+        <main className="flex min-h-0 flex-1 flex-col px-4 pb-[calc(var(--ask-command-bar-height)+var(--ask-command-bar-gap))] pt-5 sm:px-6 lg:px-10 lg:pt-6">{children}</main>
       </div>
+      <AskCommandBar onOpen={onAskAI} />
     </div>
   );
 }
