@@ -1,23 +1,46 @@
-import { useState } from "react";
+import { createPortal } from "react-dom";
+import { useLayoutEffect, useState } from "react";
 import { HelpCircle } from "lucide-react";
 import { PIPELINE_STAGES, STAGE_DEFINITIONS } from "../constants/pipeline";
+import useDismissibleSurface from "../hooks/useDismissibleSurface";
 
 export default function StageGuideButton() {
   const [open, setOpen] = useState(false);
+  const [position, setPosition] = useState(null);
+  const { surfaceRef, triggerRef } = useDismissibleSurface(open, () => setOpen(false), { closeOnScroll: true });
+
+  useLayoutEffect(() => {
+    if (!open) return undefined;
+    const updatePosition = () => {
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const width = Math.min(420, window.innerWidth - 32);
+      setPosition({
+        top: rect.bottom + 8,
+        left: Math.max(16, Math.min(rect.right - width, window.innerWidth - width - 16)),
+        width,
+      });
+    };
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    return () => window.removeEventListener("resize", updatePosition);
+  }, [open, triggerRef]);
 
   return (
     <div className="relative">
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
-        className="inline-flex h-10 items-center gap-2 rounded-lg border border-app bg-surface px-3 text-sm font-bold text-secondary transition hover:bg-raised hover:text-primary"
+        ref={triggerRef}
+        title="Stage guide"
+        aria-label="Stage guide"
+        className="glass-control inline-flex h-10 w-10 items-center justify-center rounded-full border border-app transition"
         aria-expanded={open}
       >
         <HelpCircle size={16} />
-        Stage guide
       </button>
-      {open ? (
-        <div className="absolute right-0 top-12 z-30 w-[min(92vw,420px)] rounded-lg border border-app bg-surface p-4 shadow-xl">
+      {open && position && typeof document !== "undefined" ? createPortal(
+        <div ref={surfaceRef} style={{ top: position.top, left: position.left, width: position.width }} className="glass-menu fixed z-[90] max-h-[min(70vh,560px)] overflow-y-auto rounded-lg border p-4">
           <p className="mb-3 text-sm font-semibold text-primary">Pipeline stages</p>
           <div className="space-y-3">
             {PIPELINE_STAGES.map((stage) => (
@@ -27,7 +50,8 @@ export default function StageGuideButton() {
               </div>
             ))}
           </div>
-        </div>
+        </div>,
+        document.body,
       ) : null}
     </div>
   );

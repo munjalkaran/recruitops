@@ -49,7 +49,7 @@ export function AuthProvider({ children }) {
       setLoading(true);
       try {
         const nextProfile = await getCurrentProfile(nextSession.user.id);
-        if (!nextProfile) throw new Error("Profile not configured. Ask an Admin to create your RecruitOps profile.");
+        if (!nextProfile) throw new Error("Profile not configured. Ask an Admin to create your Telora profile.");
         if (active) setProfile(nextProfile);
       } catch (loadError) {
         if (active) setError(loadError.message?.startsWith("Profile not configured") ? loadError.message : friendlySupabaseError(loadError));
@@ -139,7 +139,7 @@ export function AuthProvider({ children }) {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4" role="dialog" aria-modal="true" aria-labelledby="idle-title">
           <div className="premium-card w-full max-w-md p-6">
             <h2 id="idle-title" className="text-lg text-primary">Your session will end soon due to inactivity.</h2>
-            <p className="mt-2 text-sm leading-6 text-secondary">For your security, RecruitOps signs you out after 30 minutes without activity.</p>
+            <p className="mt-2 text-sm leading-6 text-secondary">For your security, Telora signs you out after 30 minutes without activity.</p>
             <div className="mt-6 flex justify-end gap-2">
               <button type="button" onClick={signOut} className="action-button border border-app bg-surface text-secondary hover:bg-raised">Sign out now</button>
               <button type="button" onClick={() => armIdleTimers(true)} className="action-button action-primary">Stay signed in</button>

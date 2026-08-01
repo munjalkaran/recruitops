@@ -1,6 +1,6 @@
-# RecruitOps
+# Telora
 
-RecruitOps is Hiring Spartans' recruitment pipeline: **From candidate to payment, all in one place**. The existing React, Vite, and Tailwind interface is backed by Supabase Postgres, Auth, Row Level Security (RLS), RPC functions, and Realtime.
+Telora is Hiring Spartans' recruitment pipeline: **Talent, tracked with clarity.** The existing React, Vite, and Tailwind interface is backed by Supabase Postgres, Auth, Row Level Security (RLS), RPC functions, and Realtime.
 
 ## Supabase setup
 

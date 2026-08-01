@@ -2,7 +2,7 @@ export const buildCandidateEmailDraft = (candidate, recruiterName, organisationD
   const name = candidate?.name || "there";
   const bank = candidate?.target_bank || "";
   const role = candidate?.role || "";
-  const orgName = organisationDisplayName || "RecruitOps";
+  const orgName = organisationDisplayName || "Telora";
   const recruiter = recruiterName || "";
   const subject = bank
     ? `Follow-up on your candidature for ${bank}`

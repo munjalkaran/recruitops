@@ -1,11 +1,14 @@
-import { FileDown, ReceiptText } from "lucide-react";
+import { FileDown, FileText, ReceiptText } from "lucide-react";
 import { formatCurrency, getRecruiterName, groupInvoiceByBank } from "../utils/candidateUtils";
 
 export default function InvoiceSection({
   candidates,
   profiles,
   onDownloadInvoice,
+  onDownloadInvoicePdf,
   onMarkInvoiced,
+  billingSettings = {},
+  organisationName = "Hiring Spartans",
 }) {
   const groups = groupInvoiceByBank(candidates);
   const grandTotal = groups.reduce((total, group) => total + group.subtotal, 0);
@@ -25,6 +28,7 @@ export default function InvoiceSection({
           <p className="mt-1 text-sm text-secondary">
             Joined candidates grouped by bank/NBFC for month-end billing.
           </p>
+          {(!billingSettings.legal_name || !billingSettings.billing_address) ? <p className="mt-2 text-xs font-semibold text-amber-700 dark:text-amber-300">Billing details are incomplete. PDF output will omit unconfigured legal and tax fields.</p> : null}
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -36,6 +40,16 @@ export default function InvoiceSection({
           >
             <FileDown size={16} strokeWidth={2.2} />
             Download invoice CSV
+          </button>
+          <button
+            type="button"
+            onClick={onDownloadInvoicePdf}
+            disabled={!hasJoinedCandidates}
+            className="glass-control action-button border"
+            title="Uses only billing details configured in Administration"
+          >
+            <FileText size={16} />
+            Download invoice PDF
           </button>
           <button
             type="button"

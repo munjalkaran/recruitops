@@ -1,6 +1,7 @@
-import { ChevronDown, KeyRound, LogOut, Moon, Sun, UserCircle } from "lucide-react";
+import { ChevronDown, KeyRound, LogOut, UserCircle } from "lucide-react";
 import { useMemo, useState } from "react";
 import { ROLE_LABELS } from "../constants/pipeline";
+import useDismissibleSurface from "../hooks/useDismissibleSurface";
 
 const getInitials = (name = "") =>
   name
@@ -8,30 +9,26 @@ const getInitials = (name = "") =>
     .filter(Boolean)
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
-    .join("") || "RO";
+    .join("") || "T";
 
 export default function Header({
   pageTitle,
   profile,
   organisationName,
-  theme,
-  onToggleTheme,
   onSignOut,
   onChangePassword,
   isDemoMode,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { surfaceRef, triggerRef, close } = useDismissibleSurface(menuOpen, () => setMenuOpen(false), { closeOnScroll: true });
   const initials = useMemo(() => getInitials(profile?.full_name), [profile]);
   const roleLabel = ROLE_LABELS[profile?.role] || profile?.role || "User";
 
   return (
-    <header className="sticky top-0 z-20 border-b border-app bg-app/95 px-4 py-4 backdrop-blur sm:px-6 lg:px-10">
+    <header className="glass-header sticky top-0 z-20 border-b border-app px-4 py-4 sm:px-6 lg:px-10">
       <div className="flex items-center justify-between gap-4 pl-12 lg:pl-0">
         <div>
           <h1 className="text-xl font-semibold tracking-tight text-primary">{pageTitle}</h1>
-          <p className="mt-0.5 text-sm text-secondary">
-            {isDemoMode ? "Demo data" : organisationName}
-          </p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -39,7 +36,8 @@ export default function Header({
             <button
               type="button"
               onClick={() => setMenuOpen((current) => !current)}
-              className="flex items-center gap-2 rounded-lg border border-app bg-surface px-2 py-1.5 transition hover:bg-raised"
+              ref={triggerRef}
+              className="glass-control flex items-center gap-2 rounded-lg border border-app px-2 py-1.5 transition"
               aria-haspopup="menu"
               aria-expanded={menuOpen}
             >
@@ -59,15 +57,16 @@ export default function Header({
 
             {menuOpen ? (
               <div
-                className="absolute right-0 mt-2 w-72 rounded-lg border border-app bg-surface p-3 shadow-xl"
+                ref={surfaceRef}
+                className="glass-panel absolute right-0 mt-2 w-72 rounded-lg border p-3"
                 role="menu"
               >
-                <div className="border-b border-app pb-3">
-                  <p className="font-semibold text-primary">{profile?.full_name}</p>
-                  <p className="text-sm text-secondary">{profile?.email || "No email set"}</p>
-                  <p className="mt-1 text-xs font-bold uppercase tracking-wide text-teal-700 dark:text-teal-300">
+          <div className="border-b border-app pb-3">
+            <p className="font-semibold text-primary">{profile?.full_name}</p>
+            <p className="text-sm text-secondary">{profile?.email || "No email set"}</p>
+            <p className="mt-1 text-xs font-bold uppercase tracking-wide text-teal-700 dark:text-teal-300">
                     {roleLabel} · {organisationName}
-                  </p>
+            </p>
                 </div>
 
                 <div className="mt-2 space-y-1">
@@ -75,22 +74,14 @@ export default function Header({
                     type="button"
                     className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm font-semibold text-secondary hover:bg-raised hover:text-primary"
                     role="menuitem"
+                    onClick={close}
                   >
                     <UserCircle size={16} />
                     My Profile
                   </button>
                   <button
                     type="button"
-                    onClick={onToggleTheme}
-                    className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm font-semibold text-secondary hover:bg-raised hover:text-primary"
-                    role="menuitem"
-                  >
-                    {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-                    Theme
-                  </button>
-                  <button
-                    type="button"
-                    onClick={onChangePassword}
+                    onClick={() => { onChangePassword(); close(); }}
                     className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm font-semibold text-secondary hover:bg-raised hover:text-primary"
                     role="menuitem"
                   >
@@ -99,7 +90,7 @@ export default function Header({
                   </button>
                   <button
                     type="button"
-                    onClick={onSignOut}
+                    onClick={() => { onSignOut(); close(); }}
                     className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm font-semibold text-rose-600 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-950/30"
                     role="menuitem"
                   >

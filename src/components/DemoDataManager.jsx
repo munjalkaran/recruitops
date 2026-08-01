@@ -27,10 +27,10 @@ export default function DemoDataManager({ status, busy, onRemove, onRestore }) {
 
   return (
     <>
-      <section className="rounded-lg border border-app bg-surface p-5">
+      <section className="glass-panel rounded-xl border p-5 sm:p-6">
         <h2 className="text-lg font-semibold text-primary">Sample data</h2>
         <p className="mt-1 text-sm text-secondary">
-          Reversible Hiring Spartans examples for demonstrations and onboarding.
+          Reversible sample records for demonstrations and onboarding.
         </p>
 
         <dl className="mt-5 grid gap-3 sm:grid-cols-2">

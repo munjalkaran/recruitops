@@ -1,6 +1,6 @@
-# RecruitOps customer quick start
+# Telora customer quick start
 
-RecruitOps takes a candidate from sourcing through joining and invoicing. Sample records are labelled **Sample** and can be safely removed without affecting real data.
+Telora takes a candidate from sourcing through joining and invoicing. Sample records are labelled **Sample** and can be safely removed without affecting real data.
 
 ## Admin
 

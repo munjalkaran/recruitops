@@ -12,6 +12,25 @@
   --shadow: 0 12px 32px rgb(31 48 41 / 7%);
   --dur: 220ms;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --glass-bg: rgb(251 250 247 / 78%);
+  --glass-bg-strong: rgb(251 250 247 / 92%);
+  --glass-bg-subtle: rgb(251 250 247 / 64%);
+  --glass-panel: rgb(251 250 247 / 88%);
+  --glass-border: rgb(222 221 214 / 78%);
+  --glass-border-strong: rgb(203 202 194 / 88%);
+  --glass-shadow: 0 14px 34px rgb(31 48 41 / 10%);
+  --glass-shadow-raised: 0 22px 54px rgb(31 48 41 / 16%);
+  --glass-blur: 16px;
+  --glass-blur-strong: 24px;
+  --glass-saturate: 1.08;
+  --ask-command-bar-height: 64px;
+  --ask-command-bar-gap: 28px;
+  --glass-header-bg: rgb(251 250 247 / 82%);
+  --glass-menu-bg: rgb(251 250 247 / 94%);
+  --glass-modal-bg: rgb(251 250 247 / 90%);
+  --glass-modal-body-bg: rgb(251 250 247 / 96%);
+  --glass-toolbar-bg: rgb(251 250 247 / 84%);
+  --glass-control-bg: rgb(251 250 247 / 72%);
 
   /* Compatibility aliases for existing components. */
   --color-app: var(--bg);
@@ -35,5 +54,27 @@ html.dark {
   --accent-soft: #1d3028;
   --shadow: 0 16px 38px rgb(0 0 0 / 24%);
   --color-sidebar: #111113;
+  --glass-bg: rgb(24 24 27 / 82%);
+  --glass-bg-strong: rgb(24 24 27 / 94%);
+  --glass-bg-subtle: rgb(24 24 27 / 70%);
+  --glass-panel: rgb(24 24 27 / 94%);
+  --glass-border: rgb(63 63 70 / 82%);
+  --glass-border-strong: rgb(82 82 91 / 92%);
+  --glass-shadow: 0 16px 38px rgb(0 0 0 / 30%);
+  --glass-shadow-raised: 0 24px 58px rgb(0 0 0 / 44%);
+  --glass-blur-strong: 24px;
+  --glass-saturate: 1.02;
+  --glass-header-bg: rgb(24 24 27 / 86%);
+  --glass-menu-bg: rgb(24 24 27 / 96%);
+  --glass-modal-bg: rgb(24 24 27 / 94%);
+  --glass-modal-body-bg: rgb(24 24 27 / 98%);
+  --glass-toolbar-bg: rgb(24 24 27 / 88%);
+  --glass-control-bg: rgb(24 24 27 / 78%);
 }
 
+@media (max-width: 899px) {
+  :root {
+    --ask-command-bar-height: 60px;
+    --ask-command-bar-gap: 18px;
+  }
+}

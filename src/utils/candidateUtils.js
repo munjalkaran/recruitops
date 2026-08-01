@@ -51,6 +51,15 @@ export const formatCurrency = (value) => {
   }).format(amount);
 };
 
+export const formatLpa = (value) => {
+  const raw = Number(value);
+  if (!Number.isFinite(raw) || raw === 0) return "-";
+  const lpa = raw >= 1000 ? raw / 100000 : raw;
+  return `₹${lpa.toFixed(lpa % 1 ? 1 : 0)} LPA`;
+};
+
+export const formatRupees = (value) => formatCurrency(value);
+
 export const getStageCounts = (candidates) =>
   PIPELINE_STAGES.reduce((counts, stage) => {
     counts[stage] = candidates.filter((candidate) => candidate.stage === stage).length;

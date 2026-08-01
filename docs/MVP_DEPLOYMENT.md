@@ -1,4 +1,4 @@
-# RecruitOps MVP deployment
+# Telora MVP deployment
 
 ## 1. Prepare Supabase
 
@@ -57,4 +57,3 @@ After the first deploy, add the exact HTTPS Netlify URL to Supabase Auth URL con
 ## 4. Customer handoff
 
 Give the customer `docs/CUSTOMER_QUICK_START.md`. Before real candidate entry, the Admin may either keep samples for guided exploration or choose **Remove demo data**. Removal is reversible from Settings.
-

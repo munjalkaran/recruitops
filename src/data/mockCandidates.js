@@ -386,3 +386,45 @@ export const mockCandidates = [
     updated_at: "2026-04-20T10:00:00+05:30",
   },
 ];
+
+const sampleProfileValues = {
+  "Rohit Sharma": [1800000, 2200000, "Mumbai", "Delhi NCR", 4.5, 30],
+  "Anjali Verma": [900000, 1200000, "Mumbai", "Mumbai", 2.5, 45],
+  "Kavya Reddy": [1500000, 1800000, "Bengaluru", "Bengaluru", 3.5, 30],
+  "Imran Khan": [800000, 1100000, "Pune", "Pune", 2, 30],
+  "Neha Gupta": [2000000, 2500000, "Delhi NCR", "Mumbai", 5, 60],
+  "Deepak Rao": [1300000, 1600000, "Chennai", "Chennai", 6, 30],
+  "Sneha Iyer": [700000, 950000, "Bengaluru", "Hyderabad", 1.5, 30],
+  "Vikram Singh": [2200000, 2800000, "Mumbai", "Delhi NCR", 7, 45],
+  "Pooja Desai": [1200000, 1500000, "Bengaluru", "Pune", 3, 30],
+  "Arun Kumar": [1600000, 2000000, "Delhi NCR", "Mumbai", 4, 30],
+  "Fatima Sheikh": [1000000, 1400000, "Chennai", "Chennai", 3.5, 15],
+  "Manish Patel": [1800000, 2300000, "Mumbai", "Delhi NCR", 5.5, 60],
+  "Lakshmi Menon": [600000, 850000, "Bengaluru", "Pune", 1.5, 30],
+  "Sameer Joshi": [1100000, 1450000, "Mumbai", "Mumbai", 2.5, 30],
+  "Ritu Agarwal": [900000, 1200000, "Pune", "Hyderabad", 2, 30],
+  "Arun Kumar": [800000, 1100000, "Chennai", "Pune", 1.5, 15],
+};
+const vacancyByRole = { "Relationship Manager": "77777777-0001-4777-8777-777777777001", "Branch Sales Officer": "77777777-0002-4777-8777-777777777002", "Credit Analyst": "77777777-0003-4777-8777-777777777003", "Loan Officer": "77777777-0004-4777-8777-777777777004", "Collections Executive": "77777777-0005-4777-8777-777777777005", "Customer Service Officer": "77777777-0006-4777-8777-777777777006" };
+mockCandidates.forEach((candidate) => {
+  const values = sampleProfileValues[candidate.name];
+  if (values) [candidate.current_ctc, candidate.expected_ctc, candidate.current_location, candidate.preferred_location, candidate.relevant_experience, candidate.notice_period_days] = values;
+  candidate.vacancy_id = vacancyByRole[candidate.role] || candidate.vacancy_id || null;
+  candidate.source = candidate.source || "Telora sample dataset";
+  candidate.offer_status = candidate.stage === "Joined" || candidate.stage === "Invoiced" || candidate.stage === "Paid" ? "Accepted" : ["Selected", "Documentation"].includes(candidate.stage) ? "Offered" : "Not Started";
+  candidate.offered_ctc = candidate.expected_ctc || null;
+  candidate.final_ctc = ["Joined", "Invoiced", "Paid"].includes(candidate.stage) ? candidate.expected_ctc : null;
+  candidate.offer_date = ["Selected", "Documentation", "Joined", "Invoiced", "Paid"].includes(candidate.stage) ? "2026-07-05" : "";
+  candidate.offer_accepted_date = ["Joined", "Invoiced", "Paid"].includes(candidate.stage) ? "2026-07-08" : "";
+  candidate.expected_joining_date = ["Selected", "Documentation"].includes(candidate.stage) ? "2026-08-15" : ["Joined", "Invoiced", "Paid"].includes(candidate.stage) ? "2026-07-10" : "";
+  candidate.actual_joining_date = ["Joined", "Invoiced", "Paid"].includes(candidate.stage) ? "2026-07-10" : "";
+  candidate.joining_risk = ["Selected", "Documentation"].includes(candidate.stage) ? "Medium" : "Low";
+  candidate.joining_notes = ["Joined", "Invoiced", "Paid"].includes(candidate.stage) ? "Joining confirmed by the client." : "Keep candidate warm through offer and joining.";
+  candidate.document_checklist = candidate.stage === "Joined" || candidate.stage === "Invoiced" || candidate.stage === "Paid" ? { id_proof: true, address_proof: true, education_documents: true, experience_letters: true, salary_slips: true, offer_letter: true, resignation_proof: true, appointment_acceptance: true } : { id_proof: true, address_proof: false, education_documents: false, experience_letters: false, salary_slips: false, offer_letter: false, resignation_proof: false, appointment_acceptance: false };
+  candidate.retention_period_days = ["Joined", "Invoiced", "Paid"].includes(candidate.stage) ? 90 : null;
+  candidate.retention_start_date = ["Joined", "Invoiced", "Paid"].includes(candidate.stage) ? candidate.actual_joining_date : "";
+  candidate.retention_due_date = ["Joined", "Invoiced", "Paid"].includes(candidate.stage) ? "2026-10-08" : "";
+  candidate.replacement_guarantee_end_date = candidate.retention_due_date;
+  candidate.invoice_eligibility_date = candidate.retention_due_date;
+  candidate.retention_status = ["Joined", "Invoiced", "Paid"].includes(candidate.stage) ? "In Progress" : "Not Started";
+});
