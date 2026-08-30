@@ -179,6 +179,7 @@ export default function App() {
   const [confirmationDialog, setConfirmationDialog] = useState(null);
   const [reviewDialog, setReviewDialog] = useState(null);
   const [interviewConfirmation, setInterviewConfirmation] = useState(null);
+  const [savedViewConfirmation, setSavedViewConfirmation] = useState(null);
   const [scheduleInterviewCandidateId, setScheduleInterviewCandidateId] = useState("");
   const [importRows, setImportRows] = useState(null);
   const [resumeDialogOpen, setResumeDialogOpen] = useState(false);
@@ -949,7 +950,12 @@ export default function App() {
     }
   };
 
-  const removeSavedView = async (view) => {
+  const removeSavedView = (view) => setSavedViewConfirmation(view);
+
+  const confirmRemoveSavedView = async () => {
+    if (!savedViewConfirmation) return;
+    const view = savedViewConfirmation;
+    setSavedViewConfirmation(null);
     if (demoMode || !supabase) {
       setSavedViews((current) => current.filter((item) => item.id !== view.id));
       return;
@@ -1605,6 +1611,17 @@ export default function App() {
           confirming={interviewConfirmation.busy}
           onCancel={() => !interviewConfirmation.busy && setInterviewConfirmation(null)}
           onConfirm={confirmNoShow}
+        />
+      ) : null}
+
+      {savedViewConfirmation ? (
+        <ConfirmationDialog
+          title="Delete this view?"
+          message={`"${savedViewConfirmation.name}" will be permanently removed.`}
+          confirmLabel="Delete view"
+          destructive
+          onCancel={() => setSavedViewConfirmation(null)}
+          onConfirm={confirmRemoveSavedView}
         />
       ) : null}
 
