@@ -49,10 +49,12 @@ export function AuthProvider({ children }) {
       setLoading(true);
       try {
         const nextProfile = await getCurrentProfile(nextSession.user.id);
-        if (!nextProfile) throw new Error("Profile not configured. Ask an Admin to create your Telora profile.");
-        if (active) setProfile(nextProfile);
+        if (active) {
+          if (nextProfile) setProfile(nextProfile);
+          else setError("Profile not configured. Ask an Admin to create your Telora profile.");
+        }
       } catch (loadError) {
-        if (active) setError(loadError.message?.startsWith("Profile not configured") ? loadError.message : friendlySupabaseError(loadError));
+        if (active) setError(friendlySupabaseError(loadError));
       } finally {
         if (active) setLoading(false);
       }
