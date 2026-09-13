@@ -120,4 +120,13 @@ describe("Telora layout contracts", () => {
     expect(app).toContain('await supabase.rpc("update_candidate_operations"');
     expect(app).not.toContain('"expected_joining_date","actual_joining_date","joining_risk"');
   });
+
+  it("keeps Telora logos inline so app chrome never depends on a runtime image fetch", () => {
+    const logo = read("components/TeloraLogo.jsx");
+    expect(logo).not.toContain("<img");
+    expect(logo).not.toContain('src="/brand/');
+    expect(logo).toContain("<svg");
+    expect(logo).toContain('fill="currentColor"');
+    expect(logo).toContain("AccessibleFallback");
+  });
 });
