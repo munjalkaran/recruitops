@@ -23,4 +23,19 @@ describe("Telora AI interview fallbacks", () => {
     });
     expect(response.message).toContain("1 candidate");
   });
+
+  it("explains 90-day invoice eligibility and flags missing joining dates", () => {
+    const response = interpretRecruitOpsQuestion("Which joined candidates are ready for invoicing?", {
+      candidates: [
+        { id: "1", stage: "Joined", is_archived: false, actual_joining_date: "2020-01-01", retention_status: "Completed" },
+        { id: "2", stage: "Joined", is_archived: false, actual_joining_date: "", retention_status: "Not Started" },
+        { id: "3", stage: "Joined", is_archived: false, actual_joining_date: "2020-01-01", retention_status: "Failed" },
+      ],
+    });
+
+    expect(response.action.kind).toBe("invoicing");
+    expect(response.message).toContain("1 candidate is eligible");
+    expect(response.message).toContain("day 90");
+    expect(response.message).toContain("1 joined candidate still needs an actual joining date");
+  });
 });

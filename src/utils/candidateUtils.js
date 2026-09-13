@@ -1,6 +1,29 @@
 import { CLOSED_STAGES, DOC_STATUSES, PIPELINE_STAGES } from "../constants/pipeline";
 
 const pad = (value) => String(value).padStart(2, "0");
+const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
+const INVOICE_WAIT_DAYS = 90;
+const NON_BILLABLE_RETENTION_STATUSES = new Set(["Failed", "Replacement Required"]);
+
+const dateOnlyDayNumber = (value) => {
+  const match = String(value || "").trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+
+  const [, yearText, monthText, dayText] = match;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const timestamp = Date.UTC(year, month - 1, day);
+  const normalized = new Date(timestamp);
+
+  if (
+    normalized.getUTCFullYear() !== year ||
+    normalized.getUTCMonth() !== month - 1 ||
+    normalized.getUTCDate() !== day
+  ) return null;
+
+  return timestamp / MILLISECONDS_PER_DAY;
+};
 
 export const todayIso = () => {
   const today = new Date();
@@ -42,6 +65,18 @@ export const isCandidateStale = (candidate, today = todayIso()) =>
   candidate.next_follow_up < today &&
   !CLOSED_STAGES.includes(candidate.stage);
 
+export const isInvoiceEligible = (candidate, today = todayIso()) => {
+  if (
+    candidate?.stage !== "Joined" ||
+    candidate.is_archived ||
+    NON_BILLABLE_RETENTION_STATUSES.has(candidate.retention_status)
+  ) return false;
+
+  const joiningDay = dateOnlyDayNumber(candidate.actual_joining_date);
+  const todayDay = dateOnlyDayNumber(today);
+  return joiningDay !== null && todayDay !== null && joiningDay + INVOICE_WAIT_DAYS <= todayDay;
+};
+
 export const formatCurrency = (value) => {
   const amount = Number(value) || 0;
   return new Intl.NumberFormat("en-IN", {
@@ -66,16 +101,14 @@ export const getStageCounts = (candidates) =>
     return counts;
   }, {});
 
-export const getInvoiceTotal = (candidates) =>
+export const getInvoiceTotal = (candidates, today = todayIso()) =>
   candidates
-    .filter((candidate) => candidate.stage === "Joined" && !candidate.is_archived)
+    .filter((candidate) => isInvoiceEligible(candidate, today))
     .reduce((total, candidate) => total + (Number(candidate.fee) || 0), 0);
 
-export const groupInvoiceByBank = (candidates) => {
-  const joined = candidates.filter(
-    (candidate) => candidate.stage === "Joined" && !candidate.is_archived,
-  );
-  const groups = joined.reduce((bankGroups, candidate) => {
+export const groupInvoiceByBank = (candidates, today = todayIso()) => {
+  const eligibleCandidates = candidates.filter((candidate) => isInvoiceEligible(candidate, today));
+  const groups = eligibleCandidates.reduce((bankGroups, candidate) => {
     const bankName = candidate.target_bank || "Unassigned bank";
     if (!bankGroups[bankName]) {
       bankGroups[bankName] = {

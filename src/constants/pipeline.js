@@ -162,7 +162,7 @@ export const STAGE_DEFINITIONS = {
     "An interview is scheduled or interview rounds are in progress.",
   Selected: "The client selected the candidate, pending paperwork and joining.",
   Documentation: "Candidate documents are being collected, checked or submitted.",
-  Joined: "The candidate joined and the placement is now invoiceable.",
+  Joined: "The candidate has joined. The placement becomes invoice-eligible on day 90 after the actual joining date, unless retention failed or requires replacement.",
   Invoiced: "The invoice has been raised.",
   Paid: "Payment has been received.",
   Dropped: "The candidate is rejected, not interested or no longer active.",

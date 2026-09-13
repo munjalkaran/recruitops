@@ -3,15 +3,15 @@ import { buildInvoicePdf } from "./invoicePdf";
 import { getInvoiceTotal, groupInvoiceByBank } from "./candidateUtils";
 
 describe("invoice safeguards", () => {
-  it("keeps invoicing limited to active Joined candidates", () => {
+  it("keeps invoicing limited to candidates eligible on day 90", () => {
     const candidates = [
-      { name: "Joined", stage: "Joined", target_bank: "HDFC", fee: 50000, is_archived: false },
+      { name: "Joined", stage: "Joined", target_bank: "HDFC", fee: 50000, is_archived: false, actual_joining_date: "2026-01-01", retention_status: "Completed" },
       { name: "Selected", stage: "Selected", target_bank: "HDFC", fee: 90000, is_archived: false },
-      { name: "Archived joined", stage: "Joined", target_bank: "HDFC", fee: 70000, is_archived: true },
+      { name: "Archived joined", stage: "Joined", target_bank: "HDFC", fee: 70000, is_archived: true, actual_joining_date: "2026-01-01", retention_status: "Completed" },
     ];
 
-    expect(getInvoiceTotal(candidates)).toBe(50000);
-    expect(groupInvoiceByBank(candidates)).toEqual([
+    expect(getInvoiceTotal(candidates, "2026-04-01")).toBe(50000);
+    expect(groupInvoiceByBank(candidates, "2026-04-01")).toEqual([
       { bank: "HDFC", candidates: [candidates[0]], subtotal: 50000 },
     ]);
   });

@@ -1,4 +1,4 @@
-import { FileDown, FileText, ReceiptText } from "lucide-react";
+import { CalendarClock, FileDown, FileText, ReceiptText } from "lucide-react";
 import { formatCurrency, getRecruiterName, groupInvoiceByBank } from "../utils/candidateUtils";
 
 export default function InvoiceSection({
@@ -12,8 +12,11 @@ export default function InvoiceSection({
 }) {
   const groups = groupInvoiceByBank(candidates);
   const grandTotal = groups.reduce((total, group) => total + group.subtotal, 0);
-  const joinedCount = groups.reduce((total, group) => total + group.candidates.length, 0);
-  const hasJoinedCandidates = groups.length > 0;
+  const eligibleCount = groups.reduce((total, group) => total + group.candidates.length, 0);
+  const hasEligibleCandidates = groups.length > 0;
+  const joinedWithoutDate = candidates.filter(
+    (candidate) => candidate.stage === "Joined" && !candidate.is_archived && !String(candidate.actual_joining_date || "").trim(),
+  );
 
   return (
     <section className="space-y-4">
@@ -23,10 +26,10 @@ export default function InvoiceSection({
             Invoicing
           </p>
           <h2 className="mt-1 text-xl font-semibold text-primary">
-            {formatCurrency(grandTotal)} ready across {joinedCount} joined candidates
+            {formatCurrency(grandTotal)} ready across {eligibleCount} eligible candidates
           </h2>
           <p className="mt-1 text-sm text-secondary">
-            Joined candidates grouped by bank/NBFC for month-end billing.
+            Candidates become eligible on day 90 after their actual joining date, unless retention failed or requires replacement.
           </p>
           {(!billingSettings.legal_name || !billingSettings.billing_address) ? <p className="mt-2 text-xs font-semibold text-amber-700 dark:text-amber-300">Billing details are incomplete. PDF output will omit unconfigured legal and tax fields.</p> : null}
         </div>
@@ -35,7 +38,7 @@ export default function InvoiceSection({
           <button
             type="button"
             onClick={onDownloadInvoice}
-            disabled={!hasJoinedCandidates}
+            disabled={!hasEligibleCandidates}
             className="action-button border border-app bg-surface text-secondary hover:bg-raised hover:text-primary"
           >
             <FileDown size={16} strokeWidth={2.2} />
@@ -44,7 +47,7 @@ export default function InvoiceSection({
           <button
             type="button"
             onClick={onDownloadInvoicePdf}
-            disabled={!hasJoinedCandidates}
+            disabled={!hasEligibleCandidates}
             className="glass-control action-button border"
             title="Uses only billing details configured in Administration"
           >
@@ -54,7 +57,7 @@ export default function InvoiceSection({
           <button
             type="button"
             onClick={onMarkInvoiced}
-            disabled={!hasJoinedCandidates}
+            disabled={!hasEligibleCandidates}
             className="action-button action-primary"
           >
             <ReceiptText size={16} strokeWidth={2.2} />
@@ -63,9 +66,29 @@ export default function InvoiceSection({
         </div>
       </div>
 
-      {!hasJoinedCandidates ? (
+      {joinedWithoutDate.length ? (
+        <aside className="premium-card flex flex-col gap-3 p-4 sm:flex-row sm:items-start">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+            <CalendarClock size={17} />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-primary">
+              {joinedWithoutDate.length} joined candidate{joinedWithoutDate.length === 1 ? " needs" : "s need"} an actual joining date
+            </h3>
+            <p className="mt-1 text-sm leading-6 text-secondary">
+              Add the date in the candidate profile to start the 90-day eligibility period.
+            </p>
+            <p className="mt-2 text-xs font-medium text-secondary">
+              {joinedWithoutDate.slice(0, 5).map((candidate) => candidate.name || "Unnamed candidate").join(" · ")}
+              {joinedWithoutDate.length > 5 ? ` · +${joinedWithoutDate.length - 5} more` : ""}
+            </p>
+          </div>
+        </aside>
+      ) : null}
+
+      {!hasEligibleCandidates ? (
         <div className="rounded-lg border border-dashed border-app bg-surface px-4 py-12 text-center text-sm text-secondary">
-          No Joined candidates are ready to invoice.
+          No candidates have reached invoice eligibility. Joined placements become eligible on day 90.
         </div>
       ) : (
         <div className="grid gap-4 xl:grid-cols-2">

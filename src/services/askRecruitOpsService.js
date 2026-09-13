@@ -1,4 +1,5 @@
 import { isFeedbackDue, interviewMatchesDay } from "../utils/interviews";
+import { isInvoiceEligible } from "../utils/candidateUtils";
 
 const normalize = (value) => String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 
@@ -35,6 +36,22 @@ export function interpretRecruitOpsQuestion(question, { candidates = [], profile
       const rows = interviews.filter((interview) => interview.interview_status === "Rescheduled" || interview.candidate_confirmation_status === "Requested Reschedule");
       return { type: "answer", message: rows.length ? `${rows.length} interview${rows.length === 1 ? " needs" : "s need"} reschedule follow-up.` : "No interviews currently need rescheduling.", action: { kind: "interviews" }, suggestions };
     }
+  }
+
+  if (/invoice|invoic|ready.*bill|bill.*ready/.test(query)) {
+    const eligible = active.filter((candidate) => isInvoiceEligible(candidate));
+    const missingJoiningDate = active.filter(
+      (candidate) => candidate.stage === "Joined" && !String(candidate.actual_joining_date || "").trim(),
+    );
+    const missingDateMessage = missingJoiningDate.length
+      ? ` ${missingJoiningDate.length} joined candidate${missingJoiningDate.length === 1 ? " still needs" : "s still need"} an actual joining date.`
+      : "";
+    return {
+      type: "answer",
+      message: `${eligible.length} candidate${eligible.length === 1 ? " is" : "s are"} eligible for invoicing. Eligibility starts on day 90 after the actual joining date, and failed or replacement-required retention is excluded.${missingDateMessage}`,
+      action: { kind: "invoicing" },
+      suggestions,
+    };
   }
 
   if (/without.*linked vacancy|no linked vacancy|no vacancy/.test(query)) {
@@ -89,6 +106,5 @@ export function interpretRecruitOpsQuestion(question, { candidates = [], profile
     const ranking = profiles.map((profile) => ({ name: profile.full_name, count: active.filter((candidate) => candidate.owner_id === profile.id).length })).filter((item) => item.count > 0).sort((a, b) => b.count - a.count);
     return ranking.length ? { type: "answer", message: `${ranking[0].name} has the most active candidates with ${ranking[0].count}. I can filter the pipeline to that recruiter.`, action: { kind: "recruiter", value: profiles.find((profile) => profile.full_name === ranking[0].name)?.id }, suggestions } : { type: "clarify", message: "No active candidates are currently assigned to a recruiter. Assign an owner from the Pipeline to make recruiter workload visible.", action: null, suggestions };
   }
-  if (/joined|invoice/.test(query)) return { type: "answer", message: `${active.filter((candidate) => candidate.stage === "Joined").length} joined candidates are currently eligible under the existing Telora invoicing workflow. The requested retention-based rule is not yet applied.`, action: { kind: "stage", value: "Joined" }, suggestions };
   return { type: "clarify", message: "I can search the current pipeline, interviews, vacancies, stages, banks, recruiter ownership, overdue follow-ups, or invoicing status. Try one of the suggested prompts below.", action: null, suggestions };
 }

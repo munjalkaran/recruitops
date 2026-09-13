@@ -56,6 +56,7 @@ import {
   getUniqueBanks,
   groupInvoiceByBank,
   isCandidateStale,
+  isInvoiceEligible,
 } from "./utils/candidateUtils";
 import { buildCandidateEmailDraft } from "./utils/emailTemplates";
 import { findDuplicateWarnings } from "./utils/duplicateUtils";
@@ -837,7 +838,7 @@ export default function App() {
   const downloadInvoiceCsv = () => {
     const groups = groupInvoiceByBank(candidates);
     downloadCsv("telora-month-end-invoice.csv", invoiceGroupsToCsv(groups, profiles));
-    showNotice("Downloaded invoice CSV for Joined candidates.");
+    showNotice("Downloaded invoice CSV for candidates eligible 90 days after joining.");
   };
 
   const downloadInvoicePdfFile = () => {
@@ -847,23 +848,23 @@ export default function App() {
     showNotice("Downloaded invoice PDF. Tax details are included only when configured in billing settings.");
   };
 
-  const markJoinedAsInvoiced = async () => {
+  const markEligibleAsInvoiced = async () => {
     if (!canAccessInvoicing(activeProfile)) return;
 
     if (demoMode || !supabase) {
       setCandidates((current) =>
         current.map((candidate) =>
-          candidate.stage === "Joined" && !candidate.is_archived
+          isInvoiceEligible(candidate)
             ? { ...candidate, stage: "Invoiced", updated_at: new Date().toISOString() }
             : candidate,
         ),
       );
-      showNotice("Moved all Joined candidates to Invoiced.");
+      showNotice("Moved all currently eligible candidates to Invoiced.");
       return;
     }
 
-    const joined = candidates.filter((candidate) => candidate.stage === "Joined");
-    for (const candidate of joined) {
+    const eligibleCandidates = candidates.filter((candidate) => isInvoiceEligible(candidate));
+    for (const candidate of eligibleCandidates) {
       const { error } = await supabase
         .from("candidates")
         .update({ stage: "Invoiced" })
@@ -874,7 +875,7 @@ export default function App() {
       }
     }
     await refreshData();
-    showNotice("Moved all Joined candidates to Invoiced.");
+    showNotice("Moved all currently eligible candidates to Invoiced.");
   };
 
   const updateProfile = async (profileId, updates) => {
@@ -1145,6 +1146,7 @@ export default function App() {
     if (response?.action?.kind === "recruiter") { setSearchTerm(""); setRecruiterFilter(response.action.value); setStageFilter(null); setStaleOnly(false); navigate("pipeline"); }
     if (response?.action?.kind === "interviews") navigate("interviews");
     if (response?.action?.kind === "vacancies") navigate("vacancies");
+    if (response?.action?.kind === "invoicing") navigate(isAdmin(activeProfile) ? "invoicing" : "pipeline");
     return response;
   };
 
@@ -1312,7 +1314,7 @@ export default function App() {
           profiles={profiles}
           onDownloadInvoice={downloadInvoiceCsv}
           onDownloadInvoicePdf={downloadInvoicePdfFile}
-          onMarkInvoiced={markJoinedAsInvoiced}
+          onMarkInvoiced={markEligibleAsInvoiced}
           billingSettings={billingSettings}
           organisationName={organisationName}
         />

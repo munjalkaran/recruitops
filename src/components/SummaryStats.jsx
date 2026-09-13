@@ -1,5 +1,5 @@
 import { AlertTriangle, BriefcaseBusiness, CheckCircle2, CircleDollarSign, ClipboardCheck, Users } from "lucide-react";
-import { formatCurrency, isCandidateStale } from "../utils/candidateUtils";
+import { formatCurrency, isCandidateStale, isInvoiceEligible } from "../utils/candidateUtils";
 import { getInterviewScheduledAt, isFeedbackDue, interviewMatchesDay } from "../utils/interviews";
 
 export default function SummaryStats({ candidates, interviews = [], pendingApprovalsCount = 0, onSelect }) {
@@ -12,7 +12,7 @@ export default function SummaryStats({ candidates, interviews = [], pendingAppro
     const joinedDate = candidate.joined_at || candidate.last_contact || candidate.updated_at;
     return candidate.stage === "Joined" && String(joinedDate || "").startsWith(monthPrefix);
   });
-  const readyToInvoice = active.filter((candidate) => candidate.stage === "Joined");
+  const readyToInvoice = active.filter((candidate) => isInvoiceEligible(candidate));
   const readyValue = readyToInvoice.reduce((total, candidate) => total + (Number(candidate.fee) || 0), 0);
   const weekStart = new Date();
   weekStart.setDate(weekStart.getDate() - 6);
