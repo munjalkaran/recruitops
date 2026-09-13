@@ -116,6 +116,11 @@ function textValue(candidate, field) {
   return value || "-";
 }
 
+function formatFollowUpTooltip(candidate) {
+  const dueDate = candidate.next_follow_up ? String(candidate.next_follow_up).slice(0, 10) : "the saved date";
+  return `Overdue follow-up - was due ${dueDate}`;
+}
+
 function MatchBadge({ candidate, warning, onOpenDuplicate }) {
   if (!warning) {
     return (
@@ -261,18 +266,25 @@ export default function CandidateGrid({
 
   const renderCandidateCell = (candidate) => {
     const stale = isCandidateStale(candidate);
+    const followUpTooltip = stale ? formatFollowUpTooltip(candidate) : "";
     const secondary = [candidate.current_employer, candidate.role].filter(Boolean).join(" · ");
 
     return (
       <div className="px-3 py-2">
         <div className="flex min-w-0 items-center gap-2">
           {stale ? (
-            <AlertTriangle
-              size={14}
-              strokeWidth={2.2}
-              className="shrink-0 text-amber-600"
-              aria-label="Overdue follow-up"
-            />
+            <span
+              className="inline-flex shrink-0 text-amber-600"
+              title={followUpTooltip}
+              aria-label={followUpTooltip}
+              role="img"
+            >
+              <AlertTriangle
+                size={14}
+                strokeWidth={2.2}
+                aria-hidden="true"
+              />
+            </span>
           ) : null}
           <span className="min-w-0 truncate text-sm font-semibold text-primary" title={candidate.name || "Unnamed candidate"}>
             {candidate.name || "Unnamed candidate"}

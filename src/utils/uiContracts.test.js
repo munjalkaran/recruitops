@@ -121,6 +121,15 @@ describe("Telora layout contracts", () => {
     expect(app).not.toContain('"expected_joining_date","actual_joining_date","joining_risk"');
   });
 
+  it("explains stale follow-up warnings and hides closed-stage follow-up edits", () => {
+    const grid = read("components/CandidateGrid.jsx");
+    const dialog = read("components/CandidateDetailsDialog.jsx");
+    expect(grid).toContain("formatFollowUpTooltip");
+    expect(grid).toContain("Overdue follow-up - was due");
+    expect(dialog).toContain("CLOSED_STAGES.includes");
+    expect(dialog).toContain('field === "next_follow_up" && hideNextFollowUp');
+  });
+
   it("keeps Telora logos inline so app chrome never depends on a runtime image fetch", () => {
     const logo = read("components/TeloraLogo.jsx");
     expect(logo).not.toContain("<img");

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { DOC_STATUSES, PIPELINE_STAGES } from "../constants/pipeline";
+import { CLOSED_STAGES, DOC_STATUSES, PIPELINE_STAGES } from "../constants/pipeline";
 import { formatCurrency, formatExperience, formatLpa, getRecruiterName } from "../utils/candidateUtils";
 import {
   canDirectlyEditCandidateField,
@@ -159,6 +159,7 @@ export default function CandidateDetailsDialog({
     if (!duplicateWarnings.length) return "Clear";
     return duplicateWarnings[0].isArchived ? "Previous candidate" : "Possible duplicate";
   }, [duplicateWarnings]);
+  const hideNextFollowUp = editableMode && CLOSED_STAGES.includes(formValues.stage || candidate.stage);
 
   const canEdit = (field) => editableMode && canDirectlyEditCandidateField(activeProfile, candidate, field);
   const canRequest = (field) => editableMode && canRequestCandidateChange(activeProfile, candidate, field);
@@ -356,11 +357,13 @@ export default function CandidateDetailsDialog({
           <section key={section.title} className="rounded-lg border border-app bg-surface p-4">
             <h3 className="text-sm font-semibold text-primary">{section.title}</h3>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
-              {section.fields.map(([field, label, type]) => (
-                <div key={field} className={type === "textarea" ? "md:col-span-2" : ""}>
-                  {renderEditor(field, label, type)}
-                </div>
-              ))}
+              {section.fields
+                .filter(([field]) => !(field === "next_follow_up" && hideNextFollowUp))
+                .map(([field, label, type]) => (
+                  <div key={field} className={type === "textarea" ? "md:col-span-2" : ""}>
+                    {renderEditor(field, label, type)}
+                  </div>
+                ))}
             </div>
           </section>
         ))}
