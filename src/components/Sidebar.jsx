@@ -2,17 +2,22 @@ import {
   Archive,
   Bell,
   CheckSquare,
+  ChevronDown,
   FileText,
+  KeyRound,
+  LogOut,
   ReceiptText,
   Settings,
   Table2,
+  UserCircle,
   Users,
   Sparkles,
   LayoutDashboard,
   BriefcaseBusiness,
   CalendarDays,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { ROLE_LABELS } from "../constants/pipeline";
 import { TeloraLogo, TeloraWordmark } from "./TeloraLogo";
 import useDismissibleSurface from "../hooks/useDismissibleSurface";
 
@@ -38,15 +43,30 @@ const icons = {
   interviews: CalendarDays,
 };
 
+const getInitials = (name = "") =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "T";
+
 export default function Sidebar({
   activePage,
   navItems,
   onNavigate,
   organisationName,
   pendingApprovalsCount,
+  profile,
+  onSignOut,
+  onChangePassword,
 }) {
   const [comingSoonOpen, setComingSoonOpen] = useState(false);
-  const { surfaceRef, triggerRef, close } = useDismissibleSurface(comingSoonOpen, () => setComingSoonOpen(false));
+  const [accountOpen, setAccountOpen] = useState(false);
+  const { surfaceRef, triggerRef } = useDismissibleSurface(comingSoonOpen, () => setComingSoonOpen(false));
+  const { surfaceRef: accountSurfaceRef, triggerRef: accountTriggerRef, close: closeAccount } = useDismissibleSurface(accountOpen, () => setAccountOpen(false), { closeOnScroll: true });
+  const initials = useMemo(() => getInitials(profile?.full_name), [profile]);
+  const roleLabel = ROLE_LABELS[profile?.role] || profile?.role || "User";
 
   return (
     <div className="flex h-full flex-col px-4 py-5">
@@ -97,7 +117,81 @@ export default function Sidebar({
         })}
       </nav>
 
-      <div className="mt-auto pt-5">
+      <div className="mt-auto space-y-2 pt-5">
+        <div className="relative rounded-lg border border-app bg-raised p-2">
+          <button
+            type="button"
+            onClick={() => setAccountOpen((current) => !current)}
+            ref={accountTriggerRef}
+            className="flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left transition hover:bg-surface"
+            aria-haspopup="menu"
+            aria-expanded={accountOpen}
+          >
+            {profile?.avatar_url ? (
+              <img
+                src={profile.avatar_url}
+                alt=""
+                className="h-8 w-8 rounded-full object-cover"
+              />
+            ) : (
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--accent)] text-xs font-semibold text-white">
+                {initials}
+              </span>
+            )}
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-semibold text-primary">{profile?.full_name || "Telora user"}</span>
+              <span className="block truncate text-[11px] font-semibold uppercase text-secondary">{roleLabel}</span>
+            </span>
+            <ChevronDown size={14} className="shrink-0 text-secondary" />
+          </button>
+
+          {accountOpen ? (
+            <div
+              ref={accountSurfaceRef}
+              className="glass-panel absolute bottom-[calc(100%+0.5rem)] left-0 z-40 w-full rounded-lg border p-3 shadow-lg"
+              role="menu"
+            >
+              <div className="border-b border-app pb-3">
+                <p className="font-semibold text-primary">{profile?.full_name}</p>
+                <p className="text-sm text-secondary">{profile?.email || "No email set"}</p>
+                <p className="mt-1 text-xs font-bold uppercase tracking-wide text-teal-700 dark:text-teal-300">
+                  {roleLabel} · {organisationName}
+                </p>
+              </div>
+
+              <div className="mt-2 space-y-1">
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm font-semibold text-secondary hover:bg-raised hover:text-primary"
+                  role="menuitem"
+                  onClick={closeAccount}
+                >
+                  <UserCircle size={16} />
+                  My Profile
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { onChangePassword?.(); closeAccount(); }}
+                  className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm font-semibold text-secondary hover:bg-raised hover:text-primary"
+                  role="menuitem"
+                >
+                  <KeyRound size={16} />
+                  Change Password
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { onSignOut?.(); closeAccount(); }}
+                  className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm font-semibold text-rose-600 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-950/30"
+                  role="menuitem"
+                >
+                  <LogOut size={16} />
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          ) : null}
+        </div>
+
         <button
           type="button"
           ref={triggerRef}

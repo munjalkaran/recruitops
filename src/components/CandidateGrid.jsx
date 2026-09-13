@@ -2,7 +2,6 @@ import {
   Archive,
   AlertTriangle,
   Edit3,
-  Eye,
   Link2,
   Mail,
   ShieldAlert,
@@ -29,10 +28,10 @@ import {
 } from "../utils/permissions";
 import { getDocumentProgress } from "../utils/documentChecklist";
 
-const STICKY_ACTION_WIDTH = 116;
+const STICKY_ACTION_WIDTH = 88;
 
 const pipelineColumns = [
-  { label: "Actions", key: "actions", width: "w-[116px] min-w-[116px]", sticky: "actions" },
+  { label: "Actions", key: "actions", width: "w-[88px] min-w-[88px]", sticky: "actions" },
   { label: "Candidate", key: "name", width: "w-[260px] min-w-[260px]", sticky: "candidate" },
   { label: "Match", key: "match", width: "min-w-40" },
   { label: "Phone", key: "phone", width: "min-w-36" },
@@ -56,7 +55,7 @@ const pipelineColumns = [
 ];
 
 const archivedColumns = [
-  { label: "Actions", key: "actions", width: "w-[116px] min-w-[116px]", sticky: "actions" },
+  { label: "Actions", key: "actions", width: "w-[88px] min-w-[88px]", sticky: "actions" },
   { label: "Candidate", key: "name", width: "w-[260px] min-w-[260px]", sticky: "candidate" },
   { label: "Match", key: "match", width: "min-w-40" },
   { label: "Phone", key: "phone", width: "min-w-36" },
@@ -183,7 +182,7 @@ export default function CandidateGrid({
   fillHeight = false,
 }) {
   const columns = archivedMode ? archivedColumns : pipelineColumns;
-  const tableWidth = archivedMode ? "min-w-[2620px]" : "min-w-[2740px]";
+  const tableWidth = archivedMode ? "min-w-[2592px]" : "min-w-[2712px]";
 
   const renderTextInput = (candidate, field, extraClass = "") => {
     const canEdit = canDirectlyEditCandidateField(activeProfile, candidate, field);
@@ -286,9 +285,14 @@ export default function CandidateGrid({
               />
             </span>
           ) : null}
-          <span className="min-w-0 truncate text-sm font-semibold text-primary" title={candidate.name || "Unnamed candidate"}>
+          <button
+            type="button"
+            onClick={() => onOpenDetails?.(candidate)}
+            className="min-w-0 truncate text-left text-sm font-semibold text-primary underline-offset-4 hover:text-[var(--accent)] hover:underline"
+            title={candidate.name || "Unnamed candidate"}
+          >
             {candidate.name || "Unnamed candidate"}
-          </span>
+          </button>
           {candidate.is_demo ? (
             <span className="shrink-0 rounded-full bg-sky-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sky-700 dark:bg-sky-950 dark:text-sky-200">
               Sample
@@ -333,15 +337,6 @@ export default function CandidateGrid({
 
     return (
       <div className="flex items-center gap-1.5 px-2 py-2">
-        <button
-          type="button"
-          onClick={() => onOpenDetails?.(candidate)}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-app bg-surface text-secondary transition hover:bg-raised hover:text-primary"
-          aria-label={`Open details for ${candidate.name || "candidate"}`}
-          title="Details"
-        >
-          <Eye size={15} />
-        </button>
         {archivedMode ? (
           canRestore ? (
             <button

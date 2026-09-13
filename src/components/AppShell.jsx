@@ -15,7 +15,6 @@ export default function AppShell({
   onSignOut,
   onChangePassword,
   pendingApprovalsCount,
-  isDemoMode,
   onAskAI,
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -43,6 +42,9 @@ export default function AppShell({
           onNavigate={navigate}
           organisationName={organisationName}
           pendingApprovalsCount={pendingApprovalsCount}
+          profile={profile}
+          onSignOut={onSignOut}
+          onChangePassword={onChangePassword}
         />
       </aside>
 
@@ -69,21 +71,17 @@ export default function AppShell({
               onNavigate={navigate}
               organisationName={organisationName}
               pendingApprovalsCount={pendingApprovalsCount}
+              profile={profile}
+              onSignOut={onSignOut}
+              onChangePassword={onChangePassword}
             />
           </aside>
         </div>
       ) : null}
 
       <div className="flex min-h-screen min-w-0 flex-col lg:pl-64">
-        <Header
-          pageTitle={pageTitle}
-          profile={profile}
-          organisationName={organisationName}
-          onSignOut={onSignOut}
-          onChangePassword={onChangePassword}
-          isDemoMode={isDemoMode}
-        />
-        <main className="flex min-h-0 flex-1 flex-col px-4 pb-[calc(var(--ask-command-bar-height)+var(--ask-command-bar-gap))] pt-5 sm:px-6 lg:px-10 lg:pt-6">{children}</main>
+        <Header pageTitle={pageTitle} />
+        <main className="flex min-h-0 flex-1 flex-col px-4 pb-[calc(var(--ask-command-bar-height)+var(--ask-command-bar-gap))] pt-3 sm:px-6 lg:px-10 lg:pt-4">{children}</main>
       </div>
       <AskCommandBar onOpen={onAskAI} />
     </div>

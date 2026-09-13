@@ -34,10 +34,10 @@ export default function StageGuideButton() {
         ref={triggerRef}
         title="Stage guide"
         aria-label="Stage guide"
-        className="glass-control inline-flex h-10 w-10 items-center justify-center rounded-full border border-app transition"
+        className="glass-control inline-flex h-8 w-8 items-center justify-center rounded-full border border-app transition"
         aria-expanded={open}
       >
-        <HelpCircle size={16} />
+        <HelpCircle size={14} />
       </button>
       {open && position && typeof document !== "undefined" ? createPortal(
         <div ref={surfaceRef} style={{ top: position.top, left: position.left, width: position.width }} className="glass-menu fixed z-[90] max-h-[min(70vh,560px)] overflow-y-auto rounded-lg border p-4">

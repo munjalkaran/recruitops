@@ -1527,7 +1527,6 @@ export default function App() {
       onChangePassword={handleChangePassword}
       onAskAI={() => setAskPanelOpen(true)}
       pendingApprovalsCount={isAdmin(activeProfile) ? pendingApprovalsCount : 0}
-      isDemoMode={demoMode}
     >
       <input
         ref={fileInputRef}
