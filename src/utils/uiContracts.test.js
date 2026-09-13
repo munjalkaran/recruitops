@@ -111,4 +111,13 @@ describe("Telora layout contracts", () => {
     expect(app).toContain("mockInterviews");
     expect(fallback).toContain("shouldUseDemoFallback");
   });
+
+  it("keeps Actual Joining Date visible in the grid and on the operations path", () => {
+    const grid = read("components/CandidateGrid.jsx");
+    const app = read("App.jsx");
+    expect(grid).toContain('{ label: "Actual Joining Date", key: "actual_joining_date"');
+    expect(grid).toContain('case "actual_joining_date"');
+    expect(app).toContain('await supabase.rpc("update_candidate_operations"');
+    expect(app).not.toContain('"expected_joining_date","actual_joining_date","joining_risk"');
+  });
 });

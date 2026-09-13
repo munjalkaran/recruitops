@@ -496,7 +496,7 @@ export default function App() {
     }
 
     const update = { [field]: value };
-    const extensionFields = ["vacancy_id","relevant_experience","current_ctc","expected_ctc","current_location","preferred_location","grade","notice_period_days","last_working_date","past_client_association","offer_status","offered_ctc","final_ctc","offer_date","offer_accepted_date","resignation_date","expected_joining_date","actual_joining_date","joining_risk","joining_notes","document_checklist","retention_period_days","retention_start_date","retention_due_date","retention_status","replacement_guarantee_end_date","invoice_eligibility_date"];
+    const extensionFields = ["vacancy_id","relevant_experience","current_ctc","expected_ctc","current_location","preferred_location","grade","notice_period_days","last_working_date","past_client_association","offer_status","offered_ctc","final_ctc","offer_date","offer_accepted_date","resignation_date","expected_joining_date","joining_risk","joining_notes","document_checklist","retention_period_days","retention_start_date","retention_due_date","retention_status","replacement_guarantee_end_date","invoice_eligibility_date"];
     const result =
       isAdmin(activeProfile) && field !== "owner_id"
         ? await supabase.from("candidates").update(update).eq("id", id)

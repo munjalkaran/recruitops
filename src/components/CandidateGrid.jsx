@@ -41,6 +41,7 @@ const pipelineColumns = [
   { label: "Target Bank", key: "target_bank", width: "min-w-48" },
   { label: "Role", key: "role", width: "min-w-48" },
   { label: "Stage", key: "stage", width: "min-w-40" },
+  { label: "Actual Joining Date", key: "actual_joining_date", width: "min-w-44" },
   { label: "Recruiter", key: "owner_id", width: "min-w-44" },
   { label: "Documents", key: "docs_status", width: "min-w-36" },
   { label: "Fee", key: "fee", width: "min-w-32" },
@@ -69,6 +70,7 @@ const archivedColumns = [
   { label: "Target Bank", key: "target_bank", width: "min-w-48" },
   { label: "Role", key: "role", width: "min-w-48" },
   { label: "Stage", key: "stage", width: "min-w-40" },
+  { label: "Actual Joining Date", key: "actual_joining_date", width: "min-w-44" },
   { label: "Recruiter", key: "owner_id", width: "min-w-44" },
   { label: "Documents", key: "docs_status", width: "min-w-36" },
   { label: "Fee", key: "fee", width: "min-w-32" },
@@ -85,6 +87,7 @@ const typeByField = {
   expected_ctc: "number",
   next_follow_up: "date",
   last_contact: "date",
+  actual_joining_date: "date",
 };
 
 const moneyFields = new Set(["fee", "current_ctc", "expected_ctc"]);
@@ -175,18 +178,29 @@ export default function CandidateGrid({
   fillHeight = false,
 }) {
   const columns = archivedMode ? archivedColumns : pipelineColumns;
-  const tableWidth = archivedMode ? "min-w-[2440px]" : "min-w-[2560px]";
+  const tableWidth = archivedMode ? "min-w-[2620px]" : "min-w-[2740px]";
 
   const renderTextInput = (candidate, field, extraClass = "") => {
     const canEdit = canDirectlyEditCandidateField(activeProfile, candidate, field);
     const canRequest = canRequestCandidateChange(activeProfile, candidate, field);
     const value = candidate[field] ?? "";
+    const needsActualJoiningDate =
+      field === "actual_joining_date" && candidate.stage === "Joined" && !value;
+    const displayValue = needsActualJoiningDate ? "dd/mm/yyyy" : textValue(candidate, field);
+    const inputClass = `${extraClass} ${
+      needsActualJoiningDate
+        ? "bg-amber-50/70 font-semibold text-amber-700 placeholder:text-amber-700 dark:bg-amber-950/20 dark:text-amber-300 dark:placeholder:text-amber-300"
+        : ""
+    }`;
 
     if (!canEdit) {
       return (
         <div className="flex min-h-9 items-center gap-2 px-3 py-1.5 text-sm text-primary">
-          <span className="truncate" title={textValue(candidate, field)}>
-            {textValue(candidate, field)}
+          <span
+            className={`truncate ${needsActualJoiningDate ? "font-semibold text-amber-700 dark:text-amber-300" : ""}`}
+            title={displayValue}
+          >
+            {displayValue}
           </span>
           {canRequest ? (
             <button
@@ -209,13 +223,15 @@ export default function CandidateGrid({
         min={numberFields.has(field) ? "0" : undefined}
         step={field === "experience_years" ? "0.5" : undefined}
         value={value}
-        title={String(value || "")}
+        title={needsActualJoiningDate ? "dd/mm/yyyy" : String(value || "")}
+        placeholder={typeByField[field] === "date" ? "dd/mm/yyyy" : undefined}
+        aria-label={field === "actual_joining_date" ? "Actual joining date" : undefined}
         onChange={(event) => {
           const raw = event.target.value;
           const nextValue = numberFields.has(field) ? (raw === "" ? "" : Number(raw)) : raw;
           onUpdateCandidate(candidate.id, field, nextValue);
         }}
-        className={`sheet-input ${extraClass}`}
+        className={`sheet-input ${inputClass}`}
       />
     );
   };
@@ -402,6 +418,8 @@ export default function CandidateGrid({
         return renderTextInput(candidate, "next_follow_up", isCandidateStale(candidate) ? "font-bold text-amber-700 dark:text-amber-300" : "sheet-date");
       case "last_contact":
         return renderTextInput(candidate, "last_contact", "sheet-date");
+      case "actual_joining_date":
+        return renderTextInput(candidate, "actual_joining_date", "sheet-date");
       case "experience_years":
         return renderTextInput(candidate, "experience_years", "text-center");
       case "target_bank":
