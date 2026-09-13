@@ -767,7 +767,7 @@ export default function App() {
   };
 
   const exportFilteredRows = () => {
-    downloadCsv("recruitops-candidates.csv", candidatesToCsv(filteredCandidates, profiles));
+    downloadCsv("telora-candidates.csv", candidatesToCsv(filteredCandidates, profiles));
     showNotice(`Exported ${filteredCandidates.length} shown rows.`);
   };
 
@@ -836,7 +836,7 @@ export default function App() {
 
   const downloadInvoiceCsv = () => {
     const groups = groupInvoiceByBank(candidates);
-    downloadCsv("recruitops-month-end-invoice.csv", invoiceGroupsToCsv(groups, profiles));
+    downloadCsv("telora-month-end-invoice.csv", invoiceGroupsToCsv(groups, profiles));
     showNotice("Downloaded invoice CSV for Joined candidates.");
   };
 

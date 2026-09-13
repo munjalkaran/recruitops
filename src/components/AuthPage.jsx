@@ -45,7 +45,7 @@ export default function AuthPage({
             Talent, tracked with clarity. Powered by AI.
           </p>
           <p className="mt-5 max-w-2xl text-sm leading-6 text-secondary">
-            A secure recruitment operations workspace for staffing teams placing candidates into
+            A secure recruitment workspace for staffing teams placing candidates into
             banks and NBFCs in India. It keeps the spreadsheet feel, but adds roles, approvals,
             audit history and Supabase-backed data controls.
           </p>
