@@ -60,6 +60,7 @@ export default function Sidebar({
   profile,
   onSignOut,
   onChangePassword,
+  onAskAI,
 }) {
   const [comingSoonOpen, setComingSoonOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -118,80 +119,6 @@ export default function Sidebar({
       </nav>
 
       <div className="mt-auto space-y-2 pt-5">
-        <div className="relative rounded-lg border border-app bg-raised p-2">
-          <button
-            type="button"
-            onClick={() => setAccountOpen((current) => !current)}
-            ref={accountTriggerRef}
-            className="flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left transition hover:bg-surface"
-            aria-haspopup="menu"
-            aria-expanded={accountOpen}
-          >
-            {profile?.avatar_url ? (
-              <img
-                src={profile.avatar_url}
-                alt=""
-                className="h-8 w-8 rounded-full object-cover"
-              />
-            ) : (
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--accent)] text-xs font-semibold text-white">
-                {initials}
-              </span>
-            )}
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-semibold text-primary">{profile?.full_name || "Telora user"}</span>
-              <span className="block truncate text-[11px] font-semibold uppercase text-secondary">{roleLabel}</span>
-            </span>
-            <ChevronDown size={14} className="shrink-0 text-secondary" />
-          </button>
-
-          {accountOpen ? (
-            <div
-              ref={accountSurfaceRef}
-              className="glass-panel absolute bottom-[calc(100%+0.5rem)] left-0 z-40 w-full rounded-lg border p-3 shadow-lg"
-              role="menu"
-            >
-              <div className="border-b border-app pb-3">
-                <p className="font-semibold text-primary">{profile?.full_name}</p>
-                <p className="text-sm text-secondary">{profile?.email || "No email set"}</p>
-                <p className="mt-1 text-xs font-bold uppercase tracking-wide text-teal-700 dark:text-teal-300">
-                  {roleLabel} · {organisationName}
-                </p>
-              </div>
-
-              <div className="mt-2 space-y-1">
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm font-semibold text-secondary hover:bg-raised hover:text-primary"
-                  role="menuitem"
-                  onClick={closeAccount}
-                >
-                  <UserCircle size={16} />
-                  My Profile
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { onChangePassword?.(); closeAccount(); }}
-                  className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm font-semibold text-secondary hover:bg-raised hover:text-primary"
-                  role="menuitem"
-                >
-                  <KeyRound size={16} />
-                  Change Password
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { onSignOut?.(); closeAccount(); }}
-                  className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm font-semibold text-rose-600 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-950/30"
-                  role="menuitem"
-                >
-                  <LogOut size={16} />
-                  Sign Out
-                </button>
-              </div>
-            </div>
-          ) : null}
-        </div>
-
         <button
           type="button"
           ref={triggerRef}
@@ -212,6 +139,91 @@ export default function Sidebar({
             ))}
           </div>
         ) : null}
+
+        <div className="space-y-1">
+          <button
+            type="button"
+            onClick={() => onAskAI?.()}
+            className="flex h-12 w-full items-center gap-2 rounded-lg border border-app bg-raised px-3 py-2 text-left text-sm font-semibold text-primary transition hover:bg-surface"
+          >
+            <Sparkles size={15} className="shrink-0 text-[var(--accent)]" />
+            <span className="truncate">Ask Telora</span>
+          </button>
+
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setAccountOpen((current) => !current)}
+              ref={accountTriggerRef}
+              className="flex h-12 w-full items-center gap-2 rounded-lg border border-app bg-raised px-3 py-2 text-left transition hover:bg-surface"
+              aria-haspopup="menu"
+              aria-expanded={accountOpen}
+            >
+              {profile?.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt=""
+                  className="h-7 w-7 rounded-full object-cover"
+                />
+              ) : (
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--accent)] text-[11px] font-semibold text-white">
+                  {initials}
+                </span>
+              )}
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-semibold text-primary">{profile?.full_name || "Telora user"}</span>
+                <span className="block truncate text-[10px] font-semibold uppercase text-secondary">{roleLabel}</span>
+              </span>
+              <ChevronDown size={14} className="shrink-0 text-secondary" />
+            </button>
+
+            {accountOpen ? (
+              <div
+                ref={accountSurfaceRef}
+                className="glass-panel absolute bottom-[calc(100%+0.5rem)] left-0 z-40 w-full rounded-lg border p-3 shadow-lg"
+                role="menu"
+              >
+                <div className="border-b border-app pb-3">
+                  <p className="font-semibold text-primary">{profile?.full_name}</p>
+                  <p className="text-sm text-secondary">{profile?.email || "No email set"}</p>
+                  <p className="mt-1 text-xs font-bold uppercase tracking-wide text-teal-700 dark:text-teal-300">
+                    {roleLabel} · {organisationName}
+                  </p>
+                </div>
+
+                <div className="mt-2 space-y-1">
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm font-semibold text-secondary hover:bg-raised hover:text-primary"
+                    role="menuitem"
+                    onClick={closeAccount}
+                  >
+                    <UserCircle size={16} />
+                    My Profile
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { onChangePassword?.(); closeAccount(); }}
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm font-semibold text-secondary hover:bg-raised hover:text-primary"
+                    role="menuitem"
+                  >
+                    <KeyRound size={16} />
+                    Change Password
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { onSignOut?.(); closeAccount(); }}
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm font-semibold text-rose-600 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-950/30"
+                    role="menuitem"
+                  >
+                    <LogOut size={16} />
+                    Sign Out
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
       </div>
     </div>
   );

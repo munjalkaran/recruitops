@@ -576,7 +576,7 @@ export default function CandidateGrid({
 
   return (
     <div className="overflow-hidden rounded-lg border border-app bg-surface">
-      <div className={`${fillHeight && candidates.length ? "min-h-[220px]" : "max-h-[calc(100vh-330px)] min-h-[220px]"} overflow-auto`} style={{ "--actions-column-width": `${STICKY_ACTION_WIDTH}px`, "--candidate-column-width": "260px", ...(fillHeight && candidates.length ? { height: "max(220px, calc(100vh - 285px - var(--ask-command-bar-height) - var(--ask-command-bar-gap)))" } : {}) }}>
+      <div className={`${fillHeight && candidates.length ? "min-h-[220px]" : "max-h-[calc(100vh-330px)] min-h-[220px]"} overflow-auto`} style={{ "--actions-column-width": `${STICKY_ACTION_WIDTH}px`, "--candidate-column-width": "260px", ...(fillHeight && candidates.length ? { height: "max(220px, calc(100vh - 285px))" } : {}) }}>
         <table className={`${tableWidth} w-full border-separate border-spacing-0 text-left`}>
           <thead className="glass-header sticky top-0 z-30 text-[11px] uppercase text-secondary">
             <tr>

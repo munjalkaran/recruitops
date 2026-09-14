@@ -23,8 +23,6 @@
   --glass-blur: 16px;
   --glass-blur-strong: 24px;
   --glass-saturate: 1.08;
-  --ask-command-bar-height: 64px;
-  --ask-command-bar-gap: 28px;
   --glass-header-bg: rgb(251 250 247 / 82%);
   --glass-menu-bg: rgb(251 250 247 / 94%);
   --glass-modal-bg: rgb(251 250 247 / 90%);
@@ -70,11 +68,4 @@ html.dark {
   --glass-modal-body-bg: rgb(24 24 27 / 98%);
   --glass-toolbar-bg: rgb(24 24 27 / 88%);
   --glass-control-bg: rgb(24 24 27 / 78%);
-}
-
-@media (max-width: 899px) {
-  :root {
-    --ask-command-bar-height: 60px;
-    --ask-command-bar-gap: 18px;
-  }
 }

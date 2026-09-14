@@ -4,16 +4,21 @@ import { describe, expect, it } from "vitest";
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
 describe("Telora layout contracts", () => {
-  it("keeps Ask AI only in the bottom command bar", () => {
+  it("keeps Ask AI in the sidebar footer instead of a fixed bottom bar", () => {
     const header = read("components/Header.jsx");
-    const bar = read("components/AskCommandBar.jsx");
     const shell = read("components/AppShell.jsx");
+    const sidebar = read("components/Sidebar.jsx");
+    const theme = read("styles/theme.css");
     expect(header).not.toContain("Ask AI");
     expect(header).not.toContain("onAskAI");
     expect(header).not.toContain("Demo fallback");
-    expect(bar).toContain("Ask Telora AI");
-    expect(bar).toContain("h-[var(--ask-command-bar-height)]");
-    expect(shell).toContain("var(--ask-command-bar-gap)");
+    expect(shell).not.toContain("AskCommandBar");
+    expect(shell).not.toContain("var(--ask-command-bar");
+    expect(shell).toContain("onAskAI={openAskAI}");
+    expect(sidebar).toContain("Ask Telora");
+    expect(sidebar).toContain("onAskAI?.()");
+    expect(sidebar).not.toContain("Ask Telora AI about");
+    expect(theme).not.toContain("--ask-command-bar");
     expect(read("components/AskAIPanel.jsx")).toContain('import Modal from "./Modal"');
     expect(read("components/AskAIPanel.jsx")).not.toContain("fixed inset-0 z-[60]");
   });

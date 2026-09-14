@@ -2,7 +2,6 @@ import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
-import AskCommandBar from "./AskCommandBar";
 
 export default function AppShell({
   activePage,
@@ -21,6 +20,11 @@ export default function AppShell({
 
   const navigate = (page) => {
     onNavigate(page);
+    setDrawerOpen(false);
+  };
+
+  const openAskAI = () => {
+    onAskAI?.();
     setDrawerOpen(false);
   };
 
@@ -45,6 +49,7 @@ export default function AppShell({
           profile={profile}
           onSignOut={onSignOut}
           onChangePassword={onChangePassword}
+          onAskAI={openAskAI}
         />
       </aside>
 
@@ -74,6 +79,7 @@ export default function AppShell({
               profile={profile}
               onSignOut={onSignOut}
               onChangePassword={onChangePassword}
+              onAskAI={openAskAI}
             />
           </aside>
         </div>
@@ -81,9 +87,8 @@ export default function AppShell({
 
       <div className="flex min-h-screen min-w-0 flex-col lg:pl-64">
         <Header pageTitle={pageTitle} />
-        <main className="flex min-h-0 flex-1 flex-col px-4 pb-[calc(var(--ask-command-bar-height)+var(--ask-command-bar-gap))] pt-3 sm:px-6 lg:px-10 lg:pt-4">{children}</main>
+        <main className="flex min-h-0 flex-1 flex-col px-4 pb-6 pt-3 sm:px-6 sm:pb-8 lg:px-10 lg:pt-4">{children}</main>
       </div>
-      <AskCommandBar onOpen={onAskAI} />
     </div>
   );
 }
