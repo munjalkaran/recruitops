@@ -1,7 +1,10 @@
 import {
   Archive,
   AlertTriangle,
+  ArrowDown,
+  ArrowUp,
   Edit3,
+  Filter,
   Link2,
   Mail,
   ShieldAlert,
@@ -9,9 +12,20 @@ import {
   Undo2,
   XCircle,
 } from "lucide-react";
+import { createPortal } from "react-dom";
+import { useState } from "react";
 import DocsPill from "./DocsPill";
 import RowActionMenu from "./RowActionMenu";
 import StagePill from "./StagePill";
+import useDismissibleSurface from "../hooks/useDismissibleSurface";
+import { DOC_STATUSES, PIPELINE_STAGES } from "../constants/pipeline";
+import {
+  CANDIDATE_GRID_FILTER_TYPES,
+  MATCH_FILTER_OPTIONS,
+  UNASSIGNED_RECRUITER,
+  cycleCandidateSort,
+  isCandidateColumnFilterActive,
+} from "../utils/candidateGridView";
 import {
   formatCurrency,
   formatLpa,
@@ -120,6 +134,101 @@ function formatFollowUpTooltip(candidate) {
   return `Overdue follow-up - was due ${dueDate}`;
 }
 
+function ColumnFilterFields({ column, filter, profiles, onChange }) {
+  const filterType = CANDIDATE_GRID_FILTER_TYPES[column.key];
+
+  if (filterType === "text") {
+    return (
+      <label className="block text-xs font-medium text-secondary">
+        Contains
+        <input
+          autoFocus
+          type="text"
+          value={filter || ""}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={`Filter ${column.label.toLowerCase()}…`}
+          className="mt-1.5 h-9 w-full rounded-md border border-app bg-raised px-2.5 text-sm text-primary outline-none focus:ring-2 focus:ring-[var(--accent-soft)]"
+        />
+      </label>
+    );
+  }
+
+  if (filterType === "number") {
+    return (
+      <div className="grid grid-cols-2 gap-2">
+        {[
+          ["min", "Minimum"],
+          ["max", "Maximum"],
+        ].map(([key, label]) => (
+          <label key={key} className="text-xs font-medium text-secondary">
+            {label}
+            <input
+              autoFocus={key === "min"}
+              type="number"
+              min="0"
+              value={filter?.[key] || ""}
+              onChange={(event) => onChange({ min: filter?.min || "", max: filter?.max || "", [key]: event.target.value })}
+              className="mt-1.5 h-9 w-full rounded-md border border-app bg-raised px-2.5 text-sm tabular-nums text-primary outline-none focus:ring-2 focus:ring-[var(--accent-soft)]"
+            />
+          </label>
+        ))}
+      </div>
+    );
+  }
+
+  if (filterType === "date") {
+    return (
+      <div className="space-y-1" role="radiogroup" aria-label={`${column.label} filter`}>
+        {[
+          ["", "Any date"],
+          ["has", "Has a date"],
+          ["missing", "Missing date"],
+        ].map(([value, label]) => (
+          <label key={value || "any"} className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm text-primary hover:bg-raised">
+            <input
+              type="radio"
+              name={`${column.key}-date-filter`}
+              value={value}
+              checked={(filter || "") === value}
+              onChange={() => onChange(value)}
+              className="accent-[var(--accent)]"
+            />
+            {label}
+          </label>
+        ))}
+      </div>
+    );
+  }
+
+  const options = column.key === "stage"
+    ? PIPELINE_STAGES.map((stage) => ({ value: stage, label: stage }))
+    : column.key === "owner_id"
+      ? [
+          { value: UNASSIGNED_RECRUITER, label: "Unassigned" },
+          ...profiles.map((profile) => ({ value: profile.id, label: profile.full_name })),
+        ]
+      : column.key === "docs_status"
+        ? DOC_STATUSES.map((status) => ({ value: status, label: status }))
+        : MATCH_FILTER_OPTIONS;
+  const values = Array.isArray(filter) ? filter : [];
+
+  return (
+    <div className="max-h-64 space-y-1 overflow-y-auto" aria-label={`${column.label} filter options`}>
+      {options.map((option) => (
+        <label key={option.value} className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm text-primary hover:bg-raised">
+          <input
+            type="checkbox"
+            checked={values.includes(option.value)}
+            onChange={() => onChange(values.includes(option.value) ? values.filter((value) => value !== option.value) : [...values, option.value])}
+            className="rounded border-app accent-[var(--accent)]"
+          />
+          {option.label}
+        </label>
+      ))}
+    </div>
+  );
+}
+
 function MatchBadge({ candidate, warning, onOpenDuplicate }) {
   if (!warning) {
     return (
@@ -180,9 +289,32 @@ export default function CandidateGrid({
   archivedMode = false,
   vacancies = [],
   fillHeight = false,
+  columnFilters = {},
+  sortConfig = null,
+  onColumnFilterChange,
+  onSortChange,
 }) {
   const columns = archivedMode ? archivedColumns : pipelineColumns;
   const tableWidth = archivedMode ? "min-w-[2592px]" : "min-w-[2712px]";
+  const [openFilterKey, setOpenFilterKey] = useState(null);
+  const [filterPosition, setFilterPosition] = useState({ top: 0, left: 0 });
+  const { surfaceRef: filterSurfaceRef, triggerRef: filterTriggerRef, close: closeFilter } =
+    useDismissibleSurface(Boolean(openFilterKey), () => setOpenFilterKey(null));
+  const openFilterColumn = columns.find((column) => column.key === openFilterKey);
+
+  const toggleFilterMenu = (column, event) => {
+    if (openFilterKey === column.key) {
+      closeFilter();
+      return;
+    }
+    filterTriggerRef.current = event.currentTarget;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    setFilterPosition({
+      top: Math.max(12, Math.min(bounds.bottom + 6, window.innerHeight - 360)),
+      left: Math.max(12, Math.min(bounds.right - 272, window.innerWidth - 284)),
+    });
+    setOpenFilterKey(column.key);
+  };
 
   const renderTextInput = (candidate, field, extraClass = "") => {
     const canEdit = canDirectlyEditCandidateField(activeProfile, candidate, field);
@@ -448,16 +580,45 @@ export default function CandidateGrid({
         <table className={`${tableWidth} w-full border-separate border-spacing-0 text-left`}>
           <thead className="glass-header sticky top-0 z-30 text-[11px] uppercase text-secondary">
             <tr>
-              {columns.map((column) => (
+              {columns.map((column) => {
+                const filterable = !archivedMode && Boolean(CANDIDATE_GRID_FILTER_TYPES[column.key]);
+                const filterActive = isCandidateColumnFilterActive(column.key, columnFilters[column.key]);
+                const sorted = sortConfig?.key === column.key;
+                return (
                 <th
                   key={column.key}
                   scope="col"
-                  className={`${column.width} ${stickyClass(column)} ${column.sticky ? "z-40" : ""} border-b border-app px-3 py-2.5 font-semibold tracking-wide`}
+                  aria-sort={filterable ? (sorted ? (sortConfig.direction === "asc" ? "ascending" : "descending") : "none") : undefined}
+                  className={`${column.width} ${stickyClass(column)} ${column.sticky ? "z-40" : ""} border-b border-app px-2 py-2 font-semibold tracking-wide`}
                   style={stickyStyle(column)}
                 >
-                  {column.label}
+                  {filterable ? (
+                    <div className="flex items-center justify-between gap-1">
+                      <button
+                        type="button"
+                        onClick={() => onSortChange?.(cycleCandidateSort(sortConfig, column.key))}
+                        className={`flex min-w-0 flex-1 items-center gap-1 rounded px-1 py-1 text-left hover:bg-raised hover:text-primary ${sorted ? "text-[var(--accent)]" : ""}`}
+                        aria-label={`Sort by ${column.label}${sorted ? `, currently ${sortConfig.direction === "asc" ? "ascending" : "descending"}` : ""}`}
+                      >
+                        <span className="truncate">{column.label}</span>
+                        {sorted ? (sortConfig.direction === "asc" ? <ArrowUp size={12} aria-hidden="true" /> : <ArrowDown size={12} aria-hidden="true" />) : null}
+                      </button>
+                      <button
+                        type="button"
+                        ref={openFilterKey === column.key ? filterTriggerRef : null}
+                        onClick={(event) => toggleFilterMenu(column, event)}
+                        className={`relative inline-flex h-6 w-6 shrink-0 items-center justify-center rounded hover:bg-raised hover:text-primary ${filterActive ? "bg-[var(--accent-soft)] text-[var(--accent)]" : ""}`}
+                        aria-label={`Filter ${column.label}`}
+                        aria-expanded={openFilterKey === column.key}
+                      >
+                        <Filter size={12} aria-hidden="true" />
+                        {filterActive ? <span className="absolute right-0.5 top-0.5 h-1.5 w-1.5 rounded-full bg-[var(--accent)]" /> : null}
+                      </button>
+                    </div>
+                  ) : column.label}
                 </th>
-              ))}
+                );
+              })}
             </tr>
           </thead>
           <tbody className="text-sm">
@@ -502,6 +663,35 @@ export default function CandidateGrid({
         </table>
       </div>
       <span className="sr-only">{allCandidates.length} total candidates loaded.</span>
+      {openFilterColumn && typeof document !== "undefined" ? createPortal(
+        <div
+          ref={filterSurfaceRef}
+          style={{ top: filterPosition.top, left: filterPosition.left, width: 272 }}
+          className="glass-menu fixed z-[90] rounded-lg border border-app p-3 text-left normal-case tracking-normal"
+          role="dialog"
+          aria-label={`Filter ${openFilterColumn.label}`}
+        >
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <p className="text-xs font-semibold text-primary">Filter {openFilterColumn.label}</p>
+            {isCandidateColumnFilterActive(openFilterColumn.key, columnFilters[openFilterColumn.key]) ? (
+              <button
+                type="button"
+                onClick={() => onColumnFilterChange?.(openFilterColumn.key, null)}
+                className="text-xs font-semibold text-[var(--accent)] hover:underline"
+              >
+                Clear
+              </button>
+            ) : null}
+          </div>
+          <ColumnFilterFields
+            column={openFilterColumn}
+            filter={columnFilters[openFilterColumn.key]}
+            profiles={profiles}
+            onChange={(value) => onColumnFilterChange?.(openFilterColumn.key, value)}
+          />
+        </div>,
+        document.body,
+      ) : null}
     </div>
   );
 }

@@ -130,6 +130,17 @@ describe("Telora layout contracts", () => {
     expect(dialog).toContain('field === "next_follow_up" && hideNextFollowUp');
   });
 
+  it("keeps pipeline filtering in the grid headers instead of toolbar dropdowns", () => {
+    const grid = read("components/CandidateGrid.jsx");
+    const toolbar = read("components/Toolbar.jsx");
+    expect(grid).toContain("CANDIDATE_GRID_FILTER_TYPES");
+    expect(grid).toContain("cycleCandidateSort");
+    expect(grid).toContain("aria-sort");
+    expect(toolbar).not.toContain("All stages");
+    expect(toolbar).not.toContain("All recruiters");
+    expect(toolbar).toContain("column filter");
+  });
+
   it("keeps Telora logos inline so app chrome never depends on a runtime image fetch", () => {
     const logo = read("components/TeloraLogo.jsx");
     expect(logo).not.toContain("<img");

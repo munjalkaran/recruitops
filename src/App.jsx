@@ -69,6 +69,12 @@ import { removeDemoData, restoreDemoData } from "./services/demoDataService";
 import { resolveDemoRows, shouldUseDemoFallback } from "./services/demoFallback";
 import { getPermanentDeleteErrorMessage } from "./utils/permanentDelete";
 import {
+  applyCandidateGridView,
+  countActiveCandidateColumnFilters,
+  isCandidateColumnFilterActive,
+  normalizeSavedCandidateView,
+} from "./utils/candidateGridView";
+import {
   canAccessInvoicing,
   canAccessPage,
   canArchiveCandidate,
@@ -168,8 +174,8 @@ export default function App() {
   const [dataLoading, setDataLoading] = useState(false);
   const [activePage, setActivePage] = useState(() => pageFromPath(window.location.pathname));
   const [searchTerm, setSearchTerm] = useState("");
-  const [recruiterFilter, setRecruiterFilter] = useState("all");
-  const [stageFilter, setStageFilter] = useState(null);
+  const [columnFilters, setColumnFilters] = useState({});
+  const [sortConfig, setSortConfig] = useState(null);
   const [staleOnly, setStaleOnly] = useState(false);
   const [notice, setNotice] = useState("");
   const [askPanelOpen, setAskPanelOpen] = useState(false);
@@ -193,6 +199,25 @@ export default function App() {
   const activeProfile = profile || (demoMode ? DEMO_PROFILES[0] : null);
   const organisationName = settings?.display_name || organisation?.name || "Hiring Spartans";
   const navItems = useMemo(() => getVisibleNavItems(activeProfile), [activeProfile]);
+  const activeColumnFilterCount = countActiveCandidateColumnFilters(columnFilters);
+
+  const updateCandidateColumnFilter = (key, value) => {
+    setColumnFilters((current) => {
+      const next = { ...current };
+      if (isCandidateColumnFilterActive(key, value)) next[key] = value;
+      else delete next[key];
+      return next;
+    });
+  };
+
+  const clearCandidateColumnFilter = (key) => {
+    setColumnFilters((current) => {
+      if (!(key in current)) return current;
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
+  };
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -375,7 +400,20 @@ export default function App() {
     [activeProfile, candidates],
   );
 
-  const filteredCandidates = useMemo(() => {
+  const duplicateWarningsByCandidate = useMemo(() => {
+    const warnings = {};
+    candidates.forEach((candidate) => {
+      warnings[candidate.id] = findDuplicateWarnings(candidate, candidates, profiles);
+    });
+    return warnings;
+  }, [candidates, profiles]);
+
+  const candidateGridContext = useMemo(
+    () => ({ profiles, vacancies, duplicateWarningsByCandidate, dismissedDuplicateKeys }),
+    [dismissedDuplicateKeys, duplicateWarningsByCandidate, profiles, vacancies],
+  );
+
+  const baseFilteredCandidates = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
 
     return visibleCandidates.filter((candidate) => {
@@ -387,34 +425,32 @@ export default function App() {
             .includes(query),
         );
 
-      const matchesRecruiter =
-        !isAdmin(activeProfile) ||
-        recruiterFilter === "all" ||
-        (recruiterFilter === "unassigned"
-          ? !candidate.owner_id
-          : candidate.owner_id === recruiterFilter);
-      const matchesStage = !stageFilter || candidate.stage === stageFilter;
       const matchesStale = !staleOnly || isCandidateStale(candidate);
 
-      return matchesSearch && matchesRecruiter && matchesStage && matchesStale;
+      return matchesSearch && matchesStale;
     });
-  }, [activeProfile, recruiterFilter, searchTerm, stageFilter, staleOnly, visibleCandidates]);
+  }, [searchTerm, staleOnly, visibleCandidates]);
 
-  const followUpCandidates = useMemo(
-    () =>
-      filteredCandidates
-        .filter((candidate) => candidate.next_follow_up || isCandidateStale(candidate))
-        .sort((a, b) => String(a.next_follow_up).localeCompare(String(b.next_follow_up))),
-    [filteredCandidates],
+  const filteredCandidates = useMemo(
+    () => applyCandidateGridView(
+      baseFilteredCandidates,
+      { columnFilters, sortConfig },
+      candidateGridContext,
+    ),
+    [baseFilteredCandidates, candidateGridContext, columnFilters, sortConfig],
   );
 
-  const duplicateWarningsByCandidate = useMemo(() => {
-    const warnings = {};
-    candidates.forEach((candidate) => {
-      warnings[candidate.id] = findDuplicateWarnings(candidate, candidates, profiles);
-    });
-    return warnings;
-  }, [candidates, profiles]);
+  const followUpCandidates = useMemo(
+    () => {
+      const followUps = filteredCandidates.filter(
+        (candidate) => candidate.next_follow_up || isCandidateStale(candidate),
+      );
+      return sortConfig
+        ? followUps
+        : [...followUps].sort((a, b) => String(a.next_follow_up).localeCompare(String(b.next_follow_up)));
+    },
+    [filteredCandidates, sortConfig],
+  );
 
   const pendingApprovalsCount = changeRequests.filter(
     (request) => request.status === "pending",
@@ -1105,7 +1141,7 @@ export default function App() {
 
     if (/\b(stale|overdue)\b/.test(normalizedCommand)) {
       setSearchTerm("");
-      setStageFilter(null);
+      clearCandidateColumnFilter("stage");
       setStaleOnly(true);
       return { type: "filter", message: "Showing overdue follow-ups.", action: { kind: "stale" }, suggestions: [] };
     }
@@ -1113,7 +1149,7 @@ export default function App() {
     const stageMatch = PIPELINE_STAGES.find((stage) => command.includes(stage.toLowerCase()));
     if (stageMatch) {
       setSearchTerm("");
-      setStageFilter(stageMatch);
+      updateCandidateColumnFilter("stage", [stageMatch]);
       setStaleOnly(false);
       return { type: "filter", message: `Showing ${stageMatch} candidates.`, action: { kind: "stage", value: stageMatch }, suggestions: [] };
     }
@@ -1130,7 +1166,7 @@ export default function App() {
     });
     if (bankMatch) {
       setSearchTerm(bankMatch);
-      setStageFilter(null);
+      clearCandidateColumnFilter("stage");
       setStaleOnly(false);
       return { type: "filter", message: `Showing candidates matching ${bankMatch}.`, action: { kind: "search", value: bankMatch }, suggestions: [] };
     }
@@ -1140,10 +1176,10 @@ export default function App() {
 
   const askRecruitOps = (question) => {
     const response = submitAskCommand(question);
-    if (response?.action?.kind === "search") { setSearchTerm(response.action.value); setStageFilter(null); setStaleOnly(false); navigate("pipeline"); }
-    if (response?.action?.kind === "stage") { setSearchTerm(""); setStageFilter(response.action.value); setStaleOnly(false); navigate("pipeline"); }
-    if (response?.action?.kind === "stale") { setSearchTerm(""); setStageFilter(null); setStaleOnly(true); navigate(isAdmin(activeProfile) ? "pipeline" : "followups"); }
-    if (response?.action?.kind === "recruiter") { setSearchTerm(""); setRecruiterFilter(response.action.value); setStageFilter(null); setStaleOnly(false); navigate("pipeline"); }
+    if (response?.action?.kind === "search") { setSearchTerm(response.action.value); clearCandidateColumnFilter("stage"); setStaleOnly(false); navigate("pipeline"); }
+    if (response?.action?.kind === "stage") { setSearchTerm(""); updateCandidateColumnFilter("stage", [response.action.value]); setStaleOnly(false); navigate("pipeline"); }
+    if (response?.action?.kind === "stale") { setSearchTerm(""); clearCandidateColumnFilter("stage"); setStaleOnly(true); navigate(isAdmin(activeProfile) ? "pipeline" : "followups"); }
+    if (response?.action?.kind === "recruiter") { setSearchTerm(""); updateCandidateColumnFilter("owner_id", [response.action.value]); clearCandidateColumnFilter("stage"); setStaleOnly(false); navigate("pipeline"); }
     if (response?.action?.kind === "interviews") navigate("interviews");
     if (response?.action?.kind === "vacancies") navigate("vacancies");
     if (response?.action?.kind === "invoicing") navigate(isAdmin(activeProfile) ? "invoicing" : "pipeline");
@@ -1192,8 +1228,7 @@ export default function App() {
 
   const selectOverviewSummary = (summary, candidate = null) => {
     setSearchTerm("");
-    setRecruiterFilter("all");
-    setStageFilter(null);
+    setColumnFilters({});
     setStaleOnly(false);
 
     if (summary === "candidate" && candidate) {
@@ -1212,7 +1247,7 @@ export default function App() {
     }
     if (summary === "invoice") {
       navigate(isAdmin(activeProfile) ? "invoicing" : "pipeline");
-      if (!isAdmin(activeProfile)) setStageFilter("Joined");
+      if (!isAdmin(activeProfile)) updateCandidateColumnFilter("stage", ["Joined"]);
       return;
     }
     if (["interviews", "feedbackDue", "noShows"].includes(summary)) {
@@ -1225,7 +1260,7 @@ export default function App() {
       selected: "Selected",
       joined: "Joined",
     };
-    if (stageBySummary[summary]) setStageFilter(stageBySummary[summary]);
+    if (stageBySummary[summary]) updateCandidateColumnFilter("stage", [stageBySummary[summary]]);
     navigate("pipeline");
   };
 
@@ -1396,22 +1431,17 @@ export default function App() {
       <div className="page-enter flex min-h-0 flex-1 flex-col space-y-4">
         <Toolbar
           searchTerm={searchTerm}
-          recruiterFilter={recruiterFilter}
-          stageFilter={stageFilter}
-          profiles={profiles}
           activeProfile={activeProfile}
           shownCount={gridRows.length}
           totalCount={visibleCandidates.length}
           onSearchChange={setSearchTerm}
-          onRecruiterChange={setRecruiterFilter}
-          onStageChange={(stage) => {
-            setStageFilter(stage);
-            setStaleOnly(false);
-          }}
+          activeColumnFilterCount={activeColumnFilterCount}
+          staleOnly={staleOnly}
+          onClearColumnFilters={() => setColumnFilters({})}
+          onClearStaleFilter={() => setStaleOnly(false)}
           onClearFilters={() => {
             setSearchTerm("");
-            setRecruiterFilter("all");
-            setStageFilter(null);
+            setColumnFilters({});
             setStaleOnly(false);
           }}
           onAddCandidate={addCandidate}
@@ -1423,13 +1453,14 @@ export default function App() {
           onDeleteView={removeSavedView}
           onApplyView={(view) => {
             const filters = view.filters || {};
+            const normalizedView = normalizeSavedCandidateView(filters);
             setSearchTerm(filters.searchTerm || "");
-            setRecruiterFilter(filters.recruiterFilter || "all");
-            setStageFilter(filters.stageFilter || null);
+            setColumnFilters(normalizedView.columnFilters);
+            setSortConfig(normalizedView.sortConfig);
             setStaleOnly(Boolean(filters.staleOnly));
             showNotice(`Applied saved view “${view.name}”.`);
           }}
-          currentViewFilters={{ searchTerm, recruiterFilter, stageFilter, staleOnly }}
+          currentViewFilters={{ searchTerm, columnFilters, sortConfig, staleOnly }}
         />
         <CandidateGrid
           candidates={gridRows}
@@ -1450,6 +1481,10 @@ export default function App() {
           onOpenDetails={(candidate) => setCandidateDetails({ candidate, mode: "view" })}
           onEditCandidate={(candidate) => setCandidateDetails({ candidate, mode: "edit" })}
           vacancies={vacancies}
+          columnFilters={columnFilters}
+          sortConfig={sortConfig}
+          onColumnFilterChange={updateCandidateColumnFilter}
+          onSortChange={setSortConfig}
           emptyMessage={
             activePage === "followups"
               ? "No assigned follow-ups are due."

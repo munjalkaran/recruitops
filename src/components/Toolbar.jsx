@@ -1,23 +1,20 @@
 import { Bookmark, ChevronDown, FileDown, Search, Trash2, Upload, UserPlus, X } from "lucide-react";
 import { useState } from "react";
-import { PIPELINE_STAGES } from "../constants/pipeline";
 import { canCreateCandidate, canImportCsv } from "../utils/permissions";
 import StageGuideButton from "./StageGuideButton";
 import useDismissibleSurface from "../hooks/useDismissibleSurface";
 
-export default function Toolbar({ searchTerm, recruiterFilter, stageFilter, profiles, activeProfile, shownCount, totalCount, onSearchChange, onRecruiterChange, onStageChange, onClearFilters, onAddCandidate, onImportClick, onExport, onResumeImport, savedViews = [], onSaveView, onDeleteView, onApplyView, currentViewFilters = {} }) {
+export default function Toolbar({ searchTerm, activeProfile, shownCount, totalCount, activeColumnFilterCount = 0, staleOnly = false, onSearchChange, onClearColumnFilters, onClearStaleFilter, onClearFilters, onAddCandidate, onImportClick, onExport, onResumeImport, savedViews = [], onSaveView, onDeleteView, onApplyView, currentViewFilters = {} }) {
   const [openMenu, setOpenMenu] = useState(null);
   const [viewName, setViewName] = useState("");
   const exportOpen = openMenu === "export";
   const savedViewsOpen = openMenu === "saved";
   const { surfaceRef: menuRef, triggerRef: menuTrigger, close: closeMenu } = useDismissibleSurface(Boolean(openMenu), () => setOpenMenu(null));
-  const hasFilters = Boolean(searchTerm || recruiterFilter !== "all" || stageFilter);
+  const hasFilters = Boolean(searchTerm || activeColumnFilterCount || staleOnly);
   return <section className="glass-panel glass-toolbar rounded-lg border p-2.5">
     <div className="flex flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
         <label className="relative min-w-[220px] flex-1 md:max-w-sm"><Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-secondary" /><input value={searchTerm} onChange={(event) => onSearchChange(event.target.value)} placeholder="Search name, bank, role..." className="glass-chip h-10 w-full rounded-lg border py-2 pl-9 pr-3 text-sm text-primary outline-none" aria-label="Search candidates" /></label>
-        {activeProfile?.role === "admin" ? <select value={recruiterFilter} onChange={(event) => onRecruiterChange(event.target.value)} className="glass-chip h-10 rounded-lg border px-3 text-sm text-primary outline-none" aria-label="Recruiter filter"><option value="all">All recruiters</option><option value="unassigned">Unassigned</option>{profiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.full_name}</option>)}</select> : null}
-        <select value={stageFilter || "all"} onChange={(event) => onStageChange(event.target.value === "all" ? null : event.target.value)} className="glass-chip h-10 rounded-lg border px-3 text-sm text-primary outline-none" aria-label="Stage filter"><option value="all">All stages</option>{PIPELINE_STAGES.map((stage) => <option key={stage}>{stage}</option>)}</select>
       </div>
       <div ref={menuRef} className="flex shrink-0 flex-wrap items-center gap-2">
         {canCreateCandidate(activeProfile) ? <><button type="button" onClick={onAddCandidate} className="action-button action-primary"><UserPlus size={16} /> Add Candidate</button><button type="button" onClick={onResumeImport} className="glass-control action-button border"><Upload size={15} /> Import Resume</button></> : null}
@@ -26,7 +23,7 @@ export default function Toolbar({ searchTerm, recruiterFilter, stageFilter, prof
         <div className="relative"><button type="button" ref={menuTrigger} onClick={() => setOpenMenu((current) => current === "export" ? null : "export")} className="glass-control action-button border" aria-expanded={exportOpen}><FileDown size={15} /> Export <ChevronDown size={14} /></button>{exportOpen ? <div className="glass-menu absolute right-0 top-11 z-40 w-56 rounded-lg border p-1.5"><button type="button" onClick={() => { onExport(); closeMenu(); }} className="row-menu-item">Export current view to CSV</button></div> : null}</div>
       </div>
     </div>
-    <div className="mt-2 flex min-h-8 flex-wrap items-center justify-between gap-2 border-t border-app pt-2"><div className="flex min-w-0 flex-wrap items-center gap-1.5"><span className="text-xs font-medium text-secondary">{shownCount} of {totalCount} candidates</span>{searchTerm ? <FilterChip label={`Search: ${searchTerm}`} onClear={() => onSearchChange("")} /> : null}{recruiterFilter !== "all" ? <FilterChip label="Recruiter filter" onClear={() => onRecruiterChange("all")} /> : null}{stageFilter ? <FilterChip label={`Stage: ${stageFilter}`} onClear={() => onStageChange(null)} /> : null}</div><div className="flex items-center gap-2">{hasFilters ? <button type="button" onClick={onClearFilters} className="text-xs font-semibold text-secondary underline-offset-4 hover:text-primary hover:underline">Clear filters</button> : null}<StageGuideButton /></div></div>
+    <div className="mt-2 flex min-h-8 flex-wrap items-center justify-between gap-2 border-t border-app pt-2"><div className="flex min-w-0 flex-wrap items-center gap-1.5"><span className="text-xs font-medium text-secondary">{shownCount} of {totalCount} candidates</span>{searchTerm ? <FilterChip label={`Search: ${searchTerm}`} onClear={() => onSearchChange("")} /> : null}{activeColumnFilterCount ? <FilterChip label={`${activeColumnFilterCount} column filter${activeColumnFilterCount === 1 ? "" : "s"}`} onClear={onClearColumnFilters} /> : null}{staleOnly ? <FilterChip label="Overdue only" onClear={onClearStaleFilter} /> : null}</div><div className="flex items-center gap-2">{hasFilters ? <button type="button" onClick={onClearFilters} className="text-xs font-semibold text-secondary underline-offset-4 hover:text-primary hover:underline">Clear filters</button> : null}<StageGuideButton /></div></div>
   </section>;
 }
 
