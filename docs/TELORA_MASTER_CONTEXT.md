@@ -2,7 +2,7 @@
 
 Purpose of this file: permanent handover doc for any AI agent (Claude, ChatGPT, Codex, or future tools) picking up work on this repo. Read this first. If anything here conflicts with the actual code, migrations, or main branch — the repo wins, not this file. Update this file whenever a major decision, rule, or architecture change lands on main.
 
-Last verified against repo state: commit 0562136 ("Add pipeline grid sorting and filters"), main branch, by direct inspection of code/migrations/docs — not from chat history or a prior agent's summary.
+Last verified against repo state: commit 37e65620f03b289f3ea0734b4ee8211075dd13dd ("Add read-only profile page and wire My Profile"), main branch, by direct inspection of code/migrations/docs — not from chat history or a prior agent's summary.
 
 ---
 
@@ -33,6 +33,7 @@ Two roles: admin, recruiter.
 - RLS is the real security boundary — not the UI. Admins read all organisation candidates; recruiters read only candidates where owner_id = their own auth UUID.
 - Recruiters can only touch core operational fields (stage, notes, follow-up dates, last contact, actual joining date, doc status) via the update_candidate_operations RPC, plus workflow extension fields through the profile-extension RPC when they own the candidate. Anything sensitive (phone, email, employer, fee, owner) requires submitting a correction request that an admin approves/rejects.
 - Archive, restore, permanent delete, and candidate creation are all RPC-gated, not direct table writes.
+- supabase/migrations/202607220002_rls_policies.sql defines only profiles_update_admin for updates on public.profiles. A user cannot update their own profile row. Making My Profile editable would require a new profiles_update_self policy that whitelists full_name and avatar_url and explicitly blocks role and organisation_id changes to prevent self-escalation to admin. That migration has not been written.
 - Free-plan tier enforced in the database, not just in marketing copy: max 15 active users per organisation (active_user_limit check constraint + a raised exception in initial_schema.sql). If Hiring Spartans ever needs a 16th active seat, this constraint has to change first — it's not a UI limit you can route around.
 
 ## 4. Current feature state (verified in code, not assumed)
@@ -45,6 +46,7 @@ Two roles: admin, recruiter.
 | Interviews (scheduling, panel, feedback, no-show, reschedule) | Live |
 | Scorecards | Live |
 | Activity timeline | Live |
+| My Profile page | Live — read-only at /profile; shows name, email, role, organisation, account-created date when available, and a change-password action; deliberately not editable |
 | Invoicing (CSV export, mark-invoiced, bank/NBFC grouping) | Live — eligibility is Joined + active + actual joining date + day-90 rule + billable retention status |
 | PDF invoice | Live |
 | CSV candidate import/export | Live |
@@ -70,6 +72,12 @@ src/services/askRecruitOpsService.js is a deterministic regex/keyword matcher ov
 - The pipeline grid has per-column filters and type-aware sorting for text, numbers, dates, stage, recruiter, docs, and duplicate-match state.
 - The standalone Stage and Recruiter toolbar dropdowns were removed; use the Stage and Recruiter column filters instead.
 - Saved pipeline views are normalized on load so old stageFilter/recruiterFilter saved views become the new columnFilters shape.
+- The saved views dropdown lists saved views first, then a single inline "+ Save current view" row below a divider. There is no separate Save button and no persistent name input sitting above the list; the name input appears inline only after choosing "+ Save current view".
+- Saved views and Export each have their own trigger ref, with whichever menu is active wired into useDismissibleSurface.
+- The toolbar section carries relative z-40 because .glass-panel in src/index.css applies backdrop-filter, which creates a new stacking context and traps any child z-index inside it. This lets toolbar menus paint above the CandidateGrid sticky header (z-30) and sticky header columns (z-40); raising only the menu's own z-index does not work.
+- src/components/AskCommandBar.jsx has been deleted. The fixed bottom command bar is gone. Ask Telora now lives in the sidebar footer as a compact row, below Coming Soon and above the slimmed account row.
+- The --ask-command-bar-height and --ask-command-bar-gap CSS variables were removed from src/styles/theme.css.
+- "profile" is in ROUTE_PAGES and canAccessPage explicitly allows it for any authenticated user. It has no sidebar nav entry; users reach /profile only from My Profile in the account menu.
 
 ## 5. Business rules worth knowing before you touch anything
 
@@ -96,8 +104,8 @@ Current priority order:
 
 1. P2 next up: make retention/eligibility dates (invoice_eligibility_date, retention_* fields) admin-editable and read-only for recruiters.
 2. Landing page/AuthPage copy cleanup: remove duplicate brand text, drop unverifiable "Powered by AI", generalise away from banks-only, and remove Supabase mentions. This is still pending; the current AuthPage still contains those strings.
-3. Recruiter Salary & Leave module from product-owner feedback: P2, not started.
-4. Naukri Resdex sourcing plus real AI for Ask Telora: deferred.
+3. Product-owner lifecycle feedback: add the 16 lifecycle milestone date fields. Current code still has the 10-stage PIPELINE_STAGES list and does not yet implement those milestone fields.
+4. Recruiter Salary & Leave module from product-owner feedback: P2, not started.
 
 ## 8. Rules for any agent working on this repo
 
