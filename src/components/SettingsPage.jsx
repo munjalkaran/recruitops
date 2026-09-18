@@ -107,7 +107,7 @@ export default function SettingsPage({
           <TeloraLogo size={36} />
           <div>
             <p className="font-semibold text-primary">Telora</p>
-            <p className="text-xs text-secondary">Talent, tracked with clarity. Powered by AI.</p>
+            <p className="text-xs text-secondary">Talent, tracked with clarity.</p>
           </div>
         </div>
         <div className="mt-5 flex items-center justify-between rounded-lg border border-app bg-surface px-3 py-3">

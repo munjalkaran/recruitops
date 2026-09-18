@@ -44,8 +44,8 @@ export default function SampleDataToggle({ status, busy, onRemove, onRestore }) 
           title={`Turn sample data ${dialog}?`}
           description={
             dialog === "off"
-              ? "This removes only records belonging to the Supabase demo batch. Real customer records will not be affected."
-              : "This restores the previous Supabase demo batch and its sample candidates, approvals, and invoice examples."
+              ? "This removes only records belonging to the sample data batch. Real customer records will not be affected."
+              : "This restores the previous sample data batch and its sample candidates, approvals, and invoice examples."
           }
           onClose={() => !busy && setDialog(null)}
         >

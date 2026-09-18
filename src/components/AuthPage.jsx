@@ -38,16 +38,12 @@ export default function AuthPage({
           <div className="mb-8">
             <TeloraFullLogo alt="Telora" />
           </div>
-          <h1 className="text-4xl font-semibold tracking-tight text-primary sm:text-5xl">
-            Telora
-          </h1>
           <p className="mt-3 text-xl font-semibold text-secondary">
-            Talent, tracked with clarity. Powered by AI.
+            Talent, tracked with clarity.
           </p>
           <p className="mt-5 max-w-2xl text-sm leading-6 text-secondary">
-            A secure recruitment workspace for staffing teams placing candidates into
-            banks and NBFCs in India. It keeps the spreadsheet feel, but adds roles, approvals,
-            audit history and Supabase-backed data controls.
+            A secure recruitment workspace for staffing and recruitment agencies. It keeps the spreadsheet feel, but adds roles, approvals,
+            audit history and secure, role-based data controls.
           </p>
         </section>
 
@@ -58,7 +54,7 @@ export default function AuthPage({
           <p className="mt-1 text-sm text-secondary">
             {mode === "update"
               ? "Enter a new password for your Telora account."
-              : "Use your Supabase email/password account for this organisation."}
+              : "Sign in with your email and password."}
           </p>
 
           {!isSupabaseConfigured ? (

@@ -80,7 +80,7 @@ export default function Sidebar({
           </div>
         </div>
         <p className="mt-3 text-xs leading-5 text-secondary">
-          Talent, tracked with clarity. Powered by AI.
+          Talent, tracked with clarity.
         </p>
         <div className="mt-4 rounded-lg border border-app bg-raised px-3 py-2">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-secondary">Organisation</p>
