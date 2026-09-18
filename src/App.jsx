@@ -15,6 +15,7 @@ import ApprovalsPage from "./components/ApprovalsPage";
 import MyRequestsPage from "./components/MyRequestsPage";
 import TeamPage from "./components/TeamPage";
 import SettingsPage from "./components/SettingsPage";
+import ProfilePage from "./components/ProfilePage";
 import OverviewPage from "./components/OverviewPage";
 import VacanciesPage from "./components/VacanciesPage";
 import InterviewsPage from "./components/InterviewsPage";
@@ -105,6 +106,7 @@ const pageTitles = {
   archived: "Archived Candidates",
   team: "Team",
   administration: "Administration",
+  profile: "My Profile",
   followups: "My Follow-ups",
   requests: "My Requests",
   vacancies: "Vacancies",
@@ -1421,6 +1423,16 @@ export default function App() {
       );
     }
 
+    if (activePage === "profile") {
+      return (
+        <ProfilePage
+          profile={activeProfile}
+          organisationName={organisationName}
+          onChangePassword={handleChangePassword}
+        />
+      );
+    }
+
     if (activePage === "requests") {
       return <MyRequestsPage requests={requestRows} candidates={candidates} />;
     }
@@ -1560,6 +1572,7 @@ export default function App() {
       organisationName={organisationName}
       onSignOut={handleSignOut}
       onChangePassword={handleChangePassword}
+      onOpenProfile={() => navigate("profile")}
       onAskAI={() => setAskPanelOpen(true)}
       pendingApprovalsCount={isAdmin(activeProfile) ? pendingApprovalsCount : 0}
     >

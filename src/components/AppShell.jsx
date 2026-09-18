@@ -13,6 +13,7 @@ export default function AppShell({
   organisationName,
   onSignOut,
   onChangePassword,
+  onOpenProfile,
   pendingApprovalsCount,
   onAskAI,
 }) {
@@ -25,6 +26,11 @@ export default function AppShell({
 
   const openAskAI = () => {
     onAskAI?.();
+    setDrawerOpen(false);
+  };
+
+  const openProfile = () => {
+    onOpenProfile?.();
     setDrawerOpen(false);
   };
 
@@ -49,6 +55,7 @@ export default function AppShell({
           profile={profile}
           onSignOut={onSignOut}
           onChangePassword={onChangePassword}
+          onOpenProfile={openProfile}
           onAskAI={openAskAI}
         />
       </aside>
@@ -79,6 +86,7 @@ export default function AppShell({
               profile={profile}
               onSignOut={onSignOut}
               onChangePassword={onChangePassword}
+              onOpenProfile={openProfile}
               onAskAI={openAskAI}
             />
           </aside>

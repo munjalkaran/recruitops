@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { isCandidateStale } from "./candidateUtils";
 import {
   canAccessInvoicing,
+  canAccessPage,
   canArchiveCandidate,
   canCreateCandidate,
   canManageDemoData,
@@ -9,6 +10,7 @@ import {
   canPermanentlyDeleteCandidate,
   canRequestCandidateChange,
   canRestoreCandidate,
+  getVisibleNavItems,
 } from "./permissions";
 
 const admin = { id: "admin-id", role: "admin" };
@@ -29,6 +31,14 @@ describe("RecruitOps permissions", () => {
     expect(canAccessInvoicing(recruiter)).toBe(false);
     expect(canRestoreCandidate(recruiter)).toBe(false);
     expect(canPermanentlyDeleteCandidate(recruiter)).toBe(false);
+  });
+
+  it("keeps the profile page reachable for every authenticated role without adding it to nav", () => {
+    expect(canAccessPage(admin, "profile")).toBe(true);
+    expect(canAccessPage(recruiter, "profile")).toBe(true);
+    expect(canAccessPage(null, "profile")).toBe(false);
+    expect(getVisibleNavItems(admin).some((item) => item.id === "profile")).toBe(false);
+    expect(getVisibleNavItems(recruiter).some((item) => item.id === "profile")).toBe(false);
   });
 
   it("allows a recruiter to operate only on their assigned candidate", () => {

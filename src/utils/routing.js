@@ -1,4 +1,4 @@
-export const ROUTE_PAGES = ["overview", "pipeline", "vacancies", "interviews", "invoicing", "approvals", "archived", "team", "administration", "followups", "requests"];
+export const ROUTE_PAGES = ["overview", "pipeline", "vacancies", "interviews", "invoicing", "approvals", "archived", "team", "administration", "followups", "requests", "profile"];
 export const ROUTE_ALIASES = { settings: "administration" };
 const routeSet = new Set(ROUTE_PAGES);
 

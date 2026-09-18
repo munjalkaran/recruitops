@@ -60,6 +60,7 @@ export default function Sidebar({
   profile,
   onSignOut,
   onChangePassword,
+  onOpenProfile,
   onAskAI,
 }) {
   const [comingSoonOpen, setComingSoonOpen] = useState(false);
@@ -196,7 +197,7 @@ export default function Sidebar({
                     type="button"
                     className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm font-semibold text-secondary hover:bg-raised hover:text-primary"
                     role="menuitem"
-                    onClick={closeAccount}
+                    onClick={() => { onOpenProfile?.(); closeAccount(); }}
                   >
                     <UserCircle size={16} />
                     My Profile

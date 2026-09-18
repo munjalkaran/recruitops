@@ -67,4 +67,5 @@ export const getVisibleNavItems = (profile) => {
 };
 
 export const canAccessPage = (profile, page) =>
-  getVisibleNavItems(profile).some((item) => item.id === page);
+  Boolean(profile) &&
+  (page === "profile" || getVisibleNavItems(profile).some((item) => item.id === page));
