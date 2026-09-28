@@ -30,12 +30,6 @@ It is absent from the UI and business logic, yet demo enrichment/mock data conti
 
 Recommendation: stop new writes, add a schema comment documenting compatibility-only status, and retain the column until a deliberate migration/retention decision.
 
-### P2 — interview escalation fields are read without a writer
-
-`escalation_required` and `escalation_reason` feed the “Needs attention” logic, but no live UI/RPC reliably sets them; the boolean remains at its default false. `escalation_owner_id` is unused. The escalation feature therefore exists only as dormant read logic.
-
-Recommendation: add a defined escalation action/owner workflow or remove these branches until the workflow exists.
-
 ### P2 — persistent candidate links are written but never loaded
 
 `candidate_links` is written by the duplicate-link RPC, but `App.jsx` never queries the table. Duplicate detection is recomputed client-side and the persisted `link_type` is never used. Users can “link” records without that decision affecting future UI behavior.
@@ -76,7 +70,7 @@ No candidate column is wholly untouched: every column is at least defined/defaul
 | LIVE | `id`, `candidate_id`, `vacancy_id`, `round_type`, `round_number`, `scheduled_date`, `scheduled_time`, `scheduled_at`, `timezone`, `mode`, `meeting_link`, `venue`, `panel_name`, `candidate_confirmation_status`, `interview_status`, `feedback_status`, `recommendation`, `rejection_reason`, `technical_fit_score`, `communication_score`, `role_fit_score`, `stability_motivation_score` | Written by schedule/feedback/reschedule/demo flows; consumed by schedule composition, validation, filters, attention rules, score averaging, line-up/export, or status conditions; surfaced in forms/tables/timeline. Keep. `scheduled_at` duplicates date/time but is the main sort/comparison value; define canonical derivation. |
 | DISPLAY-ONLY | `panel_email`, `feedback_summary`, `internal_notes` | Editable and visible in forms, but no downstream action/filter uses them. Reasonable notes fields, but they should be labelled informational; panel email should feed the future draft/contact flow if kept. |
 | WRITE-ONLY | `reschedule_reason`, `previous_interview_id`, `completed_at`, `feedback_received_at` | Written by reschedule/feedback flows but never surfaced or used in calculations. These can support valuable history/SLA metrics; expose them in interview history before users rely on them. |
-| READ WITHOUT RELIABLE WRITER | `escalation_required`, `escalation_reason` | Read by attention logic and potentially displayed, but no live UI sets them. Implement the workflow or remove the dormant branch. |
+| LIVE | `escalation_required`, `escalation_reason` | The no-show confirmation path writes both; attention logic reads and displays the resulting follow-up reason. Keep. |
 | DEAD | `panel_user_id`, `escalation_owner_id` | Schema/validation/index only; no live source read or write. Remove only via a deliberate migration, or build user assignment before presenting escalation/panel ownership as a feature. |
 | WRITE-ONLY (control) | `organisation_id`, `created_by`, `created_at`, `updated_at`, `is_demo`, `demo_batch_id`, `demo_removed_at` | Tenant/provenance/demo metadata. `created_at` can appear indirectly in activity fallback; other fields are correctly hidden but should be protected from recruiter rewrites (see security audit). |
 
@@ -156,10 +150,9 @@ No candidate column is wholly untouched: every column is at least defined/defaul
 
 ## Reverse audit: logic reading fields with no reliable write
 
-1. **Interview escalation:** `escalation_required` and `escalation_reason` are read by `getInterviewAttention`, but no live user path writes them.
-2. **Avatar:** `avatar_url` is rendered but has no product writer; only database/bootstrap operations could populate it.
-3. **Organisation active flag:** if the intended logic is “inactive organisations cannot use Telora,” that logic is missing entirely; the field is written/defaulted but never read by `current_profile` or frontend access control.
-4. **Scheduled time duplication:** business logic prefers `scheduled_at`, while the form writes date/time and payload construction also derives `scheduled_at`. Any external/import writer that changes only one representation can create conflicting UI. Establish one canonical value and derive the others.
+1. **Avatar:** `avatar_url` is rendered but has no product writer; only database/bootstrap operations could populate it.
+2. **Organisation active flag:** if the intended logic is “inactive organisations cannot use Telora,” that logic is missing entirely; the field is written/defaulted but never read by `current_profile` or frontend access control.
+3. **Scheduled time duplication:** business logic prefers `scheduled_at`, while the form writes date/time and payload construction also derives `scheduled_at`. Any external/import writer that changes only one representation can create conflicting UI. Establish one canonical value and derive the others.
 
 ## Recommended decision order
 
@@ -167,5 +160,4 @@ No candidate column is wholly untouched: every column is at least defined/defaul
 2. Decide the single retention/invoice clock before adding more lifecycle dates.
 3. Turn expected joining/joining risk into actionable filters/alerts or label the entire milestone block informational.
 4. Make candidate links durable in the UI or stop writing them.
-5. Implement or remove interview escalation fields.
-6. Resolve stored actor IDs into the audit timeline and set retention for snapshot PII.
+5. Resolve stored actor IDs into the audit timeline and set retention for snapshot PII.
