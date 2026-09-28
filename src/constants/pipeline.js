@@ -116,6 +116,9 @@ export const OPERATIONAL_FIELDS = [
   "joining_risk",
   "joining_notes",
   "document_checklist",
+];
+
+export const ADMIN_ONLY_CANDIDATE_FIELDS = [
   "retention_period_days",
   "retention_start_date",
   "retention_due_date",

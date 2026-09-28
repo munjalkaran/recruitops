@@ -126,6 +126,31 @@ describe("Telora layout contracts", () => {
     expect(app).not.toContain('"expected_joining_date","actual_joining_date","joining_risk"');
   });
 
+  it("keeps admin-managed retention fields visible but disabled for recruiters", () => {
+    const dialog = read("components/CandidateDetailsDialog.jsx");
+    const permissions = read("utils/permissions.js");
+    const constants = read("constants/pipeline.js");
+    const app = read("App.jsx");
+    const adminOnlyFields = [
+      "retention_period_days",
+      "retention_start_date",
+      "retention_due_date",
+      "retention_status",
+      "replacement_guarantee_end_date",
+      "invoice_eligibility_date",
+    ];
+
+    adminOnlyFields.forEach((field) => {
+      expect(dialog).toContain(`["${field}"`);
+      expect(constants).toContain(`"${field}"`);
+    });
+    expect(dialog).toContain("disabled={!allowed}");
+    expect(dialog).toContain("isAdminOnlyCandidateField(field)");
+    expect(dialog).toContain("Admin-managed");
+    expect(permissions).toContain("if (isAdminOnlyCandidateField(field)) return false");
+    expect(app).not.toContain('"document_checklist","retention_period_days"');
+  });
+
   it("explains stale follow-up warnings and hides closed-stage follow-up edits", () => {
     const grid = read("components/CandidateGrid.jsx");
     const dialog = read("components/CandidateDetailsDialog.jsx");

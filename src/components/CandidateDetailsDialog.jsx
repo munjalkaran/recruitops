@@ -4,6 +4,7 @@ import { formatCurrency, formatExperience, formatLpa, getRecruiterName } from ".
 import {
   canDirectlyEditCandidateField,
   canRequestCandidateChange,
+  isAdminOnlyCandidateField,
   isAdmin,
 } from "../utils/permissions";
 import Modal from "./Modal";
@@ -326,6 +327,9 @@ export default function CandidateDetailsDialog({
         {errors[field] ? <span className="mt-1 block text-xs font-semibold text-rose-600">{errors[field]}</span> : null}
         {!allowed && canRequest(field) ? (
           <span className="mt-1 block text-xs text-secondary">Use the correction workflow for this protected field.</span>
+        ) : null}
+        {!allowed && isAdminOnlyCandidateField(field) ? (
+          <span className="mt-1 block text-xs font-medium text-secondary">Admin-managed</span>
         ) : null}
       </label>
     );

@@ -1,4 +1,4 @@
-import { OPERATIONAL_FIELDS, PROTECTED_FIELDS, ROLES } from "../constants/pipeline";
+import { ADMIN_ONLY_CANDIDATE_FIELDS, OPERATIONAL_FIELDS, PROTECTED_FIELDS, ROLES } from "../constants/pipeline";
 
 export const isAdmin = (profile) => profile?.role === ROLES.ADMIN;
 
@@ -7,6 +7,8 @@ export const isRecruiter = (profile) => profile?.role === ROLES.RECRUITER;
 export const isOperationalField = (field) => OPERATIONAL_FIELDS.includes(field);
 
 export const isProtectedField = (field) => PROTECTED_FIELDS.includes(field);
+
+export const isAdminOnlyCandidateField = (field) => ADMIN_ONLY_CANDIDATE_FIELDS.includes(field);
 
 export const canAccessInvoicing = (profile) => isAdmin(profile);
 
@@ -27,6 +29,7 @@ export const canPermanentlyDeleteCandidate = (profile, candidate) =>
 export const canDirectlyEditCandidateField = (profile, candidate, field) => {
   if (!profile || !candidate) return false;
   if (isAdmin(profile)) return true;
+  if (isAdminOnlyCandidateField(field)) return false;
   return (
     isRecruiter(profile) &&
     candidate.owner_id === profile.id &&

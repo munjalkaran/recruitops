@@ -17,6 +17,14 @@ const admin = { id: "admin-id", role: "admin" };
 const recruiter = { id: "recruiter-id", role: "recruiter" };
 const otherRecruiter = { id: "other-id", role: "recruiter" };
 const assignedCandidate = { owner_id: recruiter.id, is_archived: false };
+const adminOnlyCandidateFields = [
+  "retention_period_days",
+  "retention_start_date",
+  "retention_due_date",
+  "retention_status",
+  "replacement_guarantee_end_date",
+  "invoice_eligibility_date",
+];
 
 describe("RecruitOps permissions", () => {
   it("keeps Admin-only actions restricted", () => {
@@ -47,6 +55,14 @@ describe("RecruitOps permissions", () => {
     expect(canArchiveCandidate(recruiter, assignedCandidate)).toBe(true);
     expect(canDirectlyEditCandidateField(otherRecruiter, assignedCandidate, "stage")).toBe(false);
     expect(canArchiveCandidate(otherRecruiter, assignedCandidate)).toBe(false);
+  });
+
+  it("keeps retention and invoice eligibility fields admin-only", () => {
+    adminOnlyCandidateFields.forEach((field) => {
+      expect(canDirectlyEditCandidateField(admin, assignedCandidate, field)).toBe(true);
+      expect(canDirectlyEditCandidateField(recruiter, assignedCandidate, field)).toBe(false);
+    });
+    expect(canDirectlyEditCandidateField(recruiter, assignedCandidate, "actual_joining_date")).toBe(true);
   });
 
   it("routes protected recruiter edits through change requests", () => {
