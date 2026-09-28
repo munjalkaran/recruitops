@@ -2,7 +2,7 @@
 
 Purpose of this file: permanent handover doc for any AI agent (Claude, ChatGPT, Codex, or future tools) picking up work on this repo. Read this first. If anything here conflicts with the actual code, migrations, or main branch — the repo wins, not this file. Update this file whenever a major decision, rule, or architecture change lands on main.
 
-Last verified against repo state: commit 37e65620f03b289f3ea0734b4ee8211075dd13dd ("Add read-only profile page and wire My Profile"), main branch, by direct inspection of code/migrations/docs — not from chat history or a prior agent's summary.
+Last verified against repo state: commit 5a4017b ("Remove unverifiable AI claim and vendor mentions from user-facing copy"), main branch, by direct inspection of code/migrations/docs — not from chat history or a prior agent's summary.
 
 ---
 
@@ -77,7 +77,9 @@ src/services/askRecruitOpsService.js is a deterministic regex/keyword matcher ov
 - The toolbar section carries relative z-40 because .glass-panel in src/index.css applies backdrop-filter, which creates a new stacking context and traps any child z-index inside it. This lets toolbar menus paint above the CandidateGrid sticky header (z-30) and sticky header columns (z-40); raising only the menu's own z-index does not work.
 - src/components/AskCommandBar.jsx has been deleted. The fixed bottom command bar is gone. Ask Telora now lives in the sidebar footer as a compact row, below Coming Soon and above the slimmed account row.
 - The --ask-command-bar-height and --ask-command-bar-gap CSS variables were removed from src/styles/theme.css.
-- "profile" is in ROUTE_PAGES and canAccessPage explicitly allows it for any authenticated user. It has no sidebar nav entry; users reach /profile only from My Profile in the account menu.
+- "profile" is in ROUTE_PAGES in src/utils/routing.js, while canAccessPage in src/utils/permissions.js explicitly allows it for any authenticated user. It has no sidebar nav entry; users reach /profile only from My Profile in the account menu.
+- Commit 5a4017b completed the public copy cleanup: the duplicate AuthPage brand heading was removed because TeloraFullLogo already renders the wordmark as SVG; "Powered by AI" was removed from AuthPage, Sidebar, and SettingsPage; banks/NBFC-only positioning was generalised to staffing and recruitment agencies; and customer-facing Supabase mentions were removed from AuthPage prose and SampleDataToggle.
+- Deliberately kept: AuthPage still names Supabase and the exact VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY variables in the configuration warning rendered when those variables are missing. This is intentional developer/operator diagnostics, not leftover marketing copy; it is not rendered in a correctly configured production deployment. DemoDataManager also names supabase/seed.sql in an admin setup instruction when sample data has not been initialised. Other Supabase references across src/ are implementation identifiers and helper names such as hasSupabaseConfig, friendlySupabaseError, and the supabase client, not customer-facing product claims.
 
 ## 5. Business rules worth knowing before you touch anything
 
@@ -102,10 +104,10 @@ docs/COMPETITIVE_GAP_AUDIT.md already has a prioritised P0–P3 list (protect tr
 
 Current priority order:
 
-1. P2 next up: make retention/eligibility dates (invoice_eligibility_date, retention_* fields) admin-editable and read-only for recruiters.
-2. Landing page/AuthPage copy cleanup: remove duplicate brand text, drop unverifiable "Powered by AI", generalise away from banks-only, and remove Supabase mentions. This is still pending; the current AuthPage still contains those strings.
-3. Product-owner lifecycle feedback: add the 16 lifecycle milestone date fields. Current code still has the 10-stage PIPELINE_STAGES list and does not yet implement those milestone fields.
-4. Recruiter Salary & Leave module from product-owner feedback: P2, not started.
+1. Retention/invoice-eligibility field permissions: make invoice_eligibility_date and retention_* fields admin-editable and read-only for recruiters. Direct candidate updates are already protected by admin-only RLS; this needs a new migration that tightens the security-definer update_candidate_profile_extensions RPC and its field allowlist.
+2. Add the 16 lifecycle milestone date fields. Current code still has the 10-stage PIPELINE_STAGES list and does not implement those milestone fields; this needs a migration.
+3. Recruiter Salary & Leave module: P2, not started.
+4. Naukri Resdex sourcing and real AI for Ask Telora: deferred.
 
 ## 8. Rules for any agent working on this repo
 

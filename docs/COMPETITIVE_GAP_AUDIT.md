@@ -19,7 +19,7 @@ This is an implementation audit for a small Indian staffing agency using spreads
 
 ## P2 — reduce coordination effort
 
-- Rule-based Ask Telora AI answers for follow-ups, notice period, vacancy coverage, interview health, and invoicing.
+- Deterministic Ask Telora regex/keyword answers over already-loaded, RLS-scoped data for follow-ups, notice period, vacancy coverage, interview health, and invoicing; there is no LLM call and no AI SDK in package.json.
 - Daily interview line-up with copy, print, reschedule, no-show, and feedback actions.
 - Deterministic vacancy health indicators and compact filters that work at laptop widths.
 - Optional email integrations only after the manual draft/copy workflow is trusted.
