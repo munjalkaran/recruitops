@@ -69,6 +69,47 @@ Size guide: **one prompt** = focused change; **a few prompts** = coordinated cod
 5. **Keep Ask Telora useful but stop framing it as AI.** The deterministic interpreter is a good low-cost feature; calling it AI invites expectations it cannot meet. Real LLM work remains correctly deferred behind clean underlying data.
 6. **“Spreadsheet feel” should describe interaction, not data architecture.** Loading every row and every audit snapshot to the browser will undermine the fast, calm experience the product is trying to preserve.
 
+## Design work completed after the audit
+
+### 16-stage lifecycle
+
+`DESIGN_LIFECYCLE_STAGES.md` records the repository evidence and a safe implementation path. The repository does **not** contain a complete, trusted 16-stage list. It contains only the endpoints `Company Requirement` and `Payment Received`, the count 16, the current 10 stages, interview round names, and the offer/joining/retention fields. The document therefore keeps found facts separate from a clearly labelled proposal:
+
+1. Company Requirement
+2. Sourced
+3. Contacted
+4. Screened
+5. TP1 Interview
+6. TP2 Interview
+7. Client Interview
+8. Selected
+9. Documentation
+10. Offer Released
+11. Offer Accepted
+12. Resignation Confirmed
+13. Joined
+14. Retention Completed
+15. Invoice Raised
+16. Payment Received
+
+`Dropped` remains an exception/off-ramp. HR Interview is unresolved because including every existing interview round would exceed 16.
+
+The design maps all current stages, specifies date type/ownership, proposes evidence-only backfill, and recommends a canonical lifecycle projection instead of copying all 16 facts onto candidates. Requirement belongs to the vacancy; interview milestones derive from interviews; billing should eventually derive from invoice/payment records. The pipeline should show grouped phases and a compact current/next milestone, with the full 16-step timeline in Candidate Detail—not 16 permanent grid columns.
+
+This cannot be a one-shot migration. It needs a product-decision freeze, additive schema/view, secure transition RPC, dual-label compatibility, reviewed backfill, UI/integration rollout, and later constraint tightening. Saved views, CSV, Ask Telora, demo data and invoice eligibility all need explicit compatibility work.
+
+### Salary and Leave
+
+`DESIGN_SALARY_LEAVE.md` proposes a separate leave workflow that copies the correction-request pattern's strengths—tenant-scoped RLS, RPC-only writes, row locking, explicit state transitions, requester/admin views and event history—without forcing date ranges and payroll effects into generic candidate field-change JSON.
+
+The proposed model includes annual policy, holidays, per-recruiter entitlement snapshots, append-only balance adjustments, leave headers/day rows/events, effective-dated salary assignments, payroll periods/entries and append-only payroll adjustments. Every table has a recruiter-own/admin-organisation RLS rule, and every proposed SECURITY DEFINER function has a literal client-field allowlist.
+
+Remaining leave balance is computed from entitlement + adjustments - approved paid days. It is not a stored decrementing counter, because cancellation, reversal, rollover and concurrent approvals would make a counter drift. Approval takes a person/year transaction lock and recalculates before committing.
+
+For salary, the recommended first release is a reviewable **salary-impact calculation**, not a statutory payroll engine: snapshot monthly base salary, apply an agreed unpaid-leave daily-rate formula, preserve inputs/version, let an admin finalise, and export to the real payroll process. Full payroll would require statutory deductions, tax, allowances, compliance and payslips and must be scoped separately.
+
+Both designs end with concrete questions that must be answered before migrations or UI work begin. The highest-impact unknowns are the owner's exact stage list/semantics, which interview rounds count, retention and invoice rules, leave-year/workday/proration policy, who chooses paid versus unpaid, recruiter salary visibility, and the salary divisor/formula.
+
 ## What went well
 
 - The latest retention allowlist correctly removes the five admin-only fields.
@@ -84,6 +125,8 @@ Size guide: **one prompt** = focused change; **a few prompts** = coordinated cod
 - **Current remote repository state:** local `main` reported “up to date with origin/main,” but `git pull` then stalled and was terminated. Later pushes failed/stalled because remote access was unavailable. The audit is based on local commit `8211c07` plus the audit branch.
 - **Real mobile performance:** estimates use build sizes and assumed 400 kbps–1 Mbps conditions, not RUM/WebPageTest or anonymized production payloads.
 - **Business intent:** whether recruiters should read billing tax/payment settings; whether saved views should actually be shared with recruiters; whether organisation `is_active` is meant to disable access; and which retention date is contractually authoritative.
+- **Exact lifecycle specification:** no complete trusted 16-stage list exists in the repository. The lifecycle design is explicitly a proposal pending owner confirmation.
+- **Leave/payroll rules:** leave year, workweek, categories, proration, carry-forward, negative balance, cancellation, salary visibility and unpaid-leave calculation policy are not documented.
 - **External consumers:** repository search shows `supabaseClient.js` unused, but an external/untracked import cannot be disproved.
 - **Data retention/compliance requirements:** the code stores full old/new candidate snapshots, but no documented retention/redaction period was found.
 
@@ -94,3 +137,5 @@ Size guide: **one prompt** = focused change; **a few prompts** = coordinated cod
 - `docs/audit/DEAD_CODE.md`
 - `docs/audit/TEST_GAPS.md`
 - `docs/audit/PERFORMANCE.md`
+- `docs/audit/DESIGN_LIFECYCLE_STAGES.md`
+- `docs/audit/DESIGN_SALARY_LEAVE.md`
