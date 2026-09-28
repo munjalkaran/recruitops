@@ -124,7 +124,6 @@ export const ADMIN_ONLY_CANDIDATE_FIELDS = [
   "retention_due_date",
   "retention_status",
   "replacement_guarantee_end_date",
-  "invoice_eligibility_date",
 ];
 
 export const PROTECTED_FIELDS = [

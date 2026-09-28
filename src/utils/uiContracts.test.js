@@ -137,7 +137,6 @@ describe("Telora layout contracts", () => {
       "retention_due_date",
       "retention_status",
       "replacement_guarantee_end_date",
-      "invoice_eligibility_date",
     ];
 
     adminOnlyFields.forEach((field) => {

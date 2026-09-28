@@ -23,7 +23,6 @@ const adminOnlyCandidateFields = [
   "retention_due_date",
   "retention_status",
   "replacement_guarantee_end_date",
-  "invoice_eligibility_date",
 ];
 
 describe("RecruitOps permissions", () => {
@@ -57,7 +56,7 @@ describe("RecruitOps permissions", () => {
     expect(canArchiveCandidate(otherRecruiter, assignedCandidate)).toBe(false);
   });
 
-  it("keeps retention and invoice eligibility fields admin-only", () => {
+  it("keeps retention fields admin-only", () => {
     adminOnlyCandidateFields.forEach((field) => {
       expect(canDirectlyEditCandidateField(admin, assignedCandidate, field)).toBe(true);
       expect(canDirectlyEditCandidateField(recruiter, assignedCandidate, field)).toBe(false);

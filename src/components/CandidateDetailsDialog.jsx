@@ -22,7 +22,7 @@ const numberFields = new Set([
   "final_ctc",
   "retention_period_days",
 ]);
-const dateFields = new Set(["last_working_date", "next_follow_up", "last_contact", "offer_date", "offer_accepted_date", "resignation_date", "expected_joining_date", "actual_joining_date", "retention_start_date", "retention_due_date", "replacement_guarantee_end_date", "invoice_eligibility_date"]);
+const dateFields = new Set(["last_working_date", "next_follow_up", "last_contact", "offer_date", "offer_accepted_date", "resignation_date", "expected_joining_date", "actual_joining_date", "retention_start_date", "retention_due_date", "replacement_guarantee_end_date"]);
 const nullableSelectFields = new Set(["vacancy_id", "owner_id"]);
 
 const sections = [
@@ -75,7 +75,6 @@ const sections = [
       ["retention_due_date", "Retention due date", "date"],
       ["retention_status", "Retention status", "retention"],
       ["replacement_guarantee_end_date", "Replacement guarantee end date", "date"],
-      ["invoice_eligibility_date", "Invoice eligibility date", "date"],
     ],
   },
   {
