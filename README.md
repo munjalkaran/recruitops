@@ -88,3 +88,7 @@ Validate a release locally with:
 pnpm install
 pnpm build
 ```
+
+## Scripts
+
+`./scripts/snapshot.sh [file ...]` prints Git state, the repository file tree, and the full contents of any named files as one pasteable snapshot.
