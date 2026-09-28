@@ -2,7 +2,7 @@
 
 Purpose of this file: permanent handover doc for any AI agent (Claude, ChatGPT, Codex, or future tools) picking up work on this repo. Read this first. If anything here conflicts with the actual code, migrations, or main branch — the repo wins, not this file. Update this file whenever a major decision, rule, or architecture change lands on main.
 
-Last verified against repo state: commit 5a4017b ("Remove unverifiable AI claim and vendor mentions from user-facing copy"), main branch, by direct inspection of code/migrations/docs — not from chat history or a prior agent's summary.
+Last verified against repo state: commit 8211c07 ("Remove unused invoice eligibility date from UI"), origin/main, by direct inspection of code/migrations/docs — not from chat history or a prior agent's summary.
 
 ---
 
@@ -32,6 +32,8 @@ Two roles: admin, recruiter.
 
 - RLS is the real security boundary — not the UI. Admins read all organisation candidates; recruiters read only candidates where owner_id = their own auth UUID.
 - Recruiters can only touch core operational fields (stage, notes, follow-up dates, last contact, actual joining date, doc status) via the update_candidate_operations RPC, plus workflow extension fields through the profile-extension RPC when they own the candidate. Anything sensitive (phone, email, employer, fee, owner) requires submitting a correction request that an admin approves/rejects.
+- Five retention fields are now admin-only in the UI and permission helpers: retention_period_days, retention_start_date, retention_due_date, retention_status, and replacement_guarantee_end_date. Migration 202609280001 removed those fields from the allowlist of the security-definer RPC update_candidate_profile_extensions. Recruiters still see those fields in the candidate detail dialog, disabled, with an "Admin-managed" hint. actual_joining_date deliberately remains recruiter-editable because recruiters are the ones who confirm joining. Admins edit the retention fields through the existing direct table update path, which was already admin-only under RLS; no RLS policy was changed.
+- The retention restriction was an RPC fix, not an RLS fix. RLS on candidates was already admin-only for direct updates. The gap was update_candidate_profile_extensions: it is SECURITY DEFINER, runs with elevated privileges, and has its own field allowlist. That allowlist is a second security boundary that RLS does not protect. Any future permissions audit on this repo must check both RLS policies and security-definer RPC allowlists.
 - Archive, restore, permanent delete, and candidate creation are all RPC-gated, not direct table writes.
 - supabase/migrations/202607220002_rls_policies.sql defines only profiles_update_admin for updates on public.profiles. A user cannot update their own profile row. Making My Profile editable would require a new profiles_update_self policy that whitelists full_name and avatar_url and explicitly blocks role and organisation_id changes to prevent self-escalation to admin. That migration has not been written.
 - Free-plan tier enforced in the database, not just in marketing copy: max 15 active users per organisation (active_user_limit check constraint + a raised exception in initial_schema.sql). If Hiring Spartans ever needs a 16th active seat, this constraint has to change first — it's not a UI limit you can route around.
@@ -52,7 +54,7 @@ Two roles: admin, recruiter.
 | CSV candidate import/export | Live |
 | Sample/demo data (seed + reversible remove/restore) | Live — 19 seeded records, admin-only, RPC-gated |
 | "Ask Telora" AI panel | Live but not actually AI — see below |
-| Retention tracking fields (retention period, due date, replacement guarantee) | Schema/UI exists; retention_status now affects invoice eligibility by excluding Failed and Replacement Required, but retention_* and invoice_eligibility_date permissions still need tightening |
+| Retention tracking fields (retention period, due date, replacement guarantee) | Live — five retention fields are admin-only; recruiters see them disabled in candidate detail with an "Admin-managed" hint; retention_status affects invoice eligibility by excluding Failed and Replacement Required |
 | Gmail/Outlook integration | Not built — manual "copy email draft" flow only |
 | WhatsApp/SMS | Not built |
 | Resume parsing | Not built |
@@ -80,36 +82,53 @@ src/services/askRecruitOpsService.js is a deterministic regex/keyword matcher ov
 - "profile" is in ROUTE_PAGES in src/utils/routing.js, while canAccessPage in src/utils/permissions.js explicitly allows it for any authenticated user. It has no sidebar nav entry; users reach /profile only from My Profile in the account menu.
 - Commit 5a4017b completed the public copy cleanup: the duplicate AuthPage brand heading was removed because TeloraFullLogo already renders the wordmark as SVG; "Powered by AI" was removed from AuthPage, Sidebar, and SettingsPage; banks/NBFC-only positioning was generalised to staffing and recruitment agencies; and customer-facing Supabase mentions were removed from AuthPage prose and SampleDataToggle.
 - Deliberately kept: AuthPage still names Supabase and the exact VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY variables in the configuration warning rendered when those variables are missing. This is intentional developer/operator diagnostics, not leftover marketing copy; it is not rendered in a correctly configured production deployment. DemoDataManager also names supabase/seed.sql in an admin setup instruction when sample data has not been initialised. Other Supabase references across src/ are implementation identifiers and helper names such as hasSupabaseConfig, friendlySupabaseError, and the supabase client, not customer-facing product claims.
+- Commit 8211c07 removed invoice_eligibility_date from the candidate detail UI and ADMIN_ONLY_CANDIDATE_FIELDS. The field had been stored, displayed, and admin-editable, but isInvoiceEligible never read it. Do not re-add it as a visible/admin-editable UI field unless the product deliberately changes invoice eligibility semantics.
 
 ## 5. Business rules worth knowing before you touch anything
 
 - Stale/returning candidate rule: re-application by a previously archived candidate triggers a warning that opens the archived record (referenced as "the returning Rohit warning" in the deploy checklist) rather than silently creating a duplicate.
 - Sample data isolation: seeded/demo candidates are flagged is_demo, go through the same authenticated RLS-protected paths as real data, and cannot be permanently deleted through the normal candidate-delete RPC — only through the explicit "Remove demo data" flow (requires typing REMOVE SAMPLE DATA to confirm). Real candidate data is never touched by this.
-- Invoice eligibility is centralized in isInvoiceEligible in src/utils/candidateUtils.js. A candidate is eligible only when stage = Joined, is_archived is false, actual_joining_date is present, actual_joining_date + 90 days <= today (eligible on day 90, inclusive), and retention_status is not Failed or Replacement Required. Joined candidates missing actual_joining_date are surfaced as a visible "needs actual joining date" state instead of silently disappearing from invoice work.
+- Invoice eligibility is centralized in isInvoiceEligible in src/utils/candidateUtils.js. A candidate is eligible only when stage = Joined, is_archived is false, actual_joining_date is present, actual_joining_date + 90 days <= today (eligible on day 90, inclusive), and retention_status is not Failed or Replacement Required. Joined candidates missing actual_joining_date are surfaced as a visible "needs actual joining date" state instead of silently disappearing from invoice work. invoice_eligibility_date is deliberately not part of this calculation.
+- invoice_eligibility_date still exists as a database column and is still present in historical migrations/demo data. It was not dropped on purpose: dropping it gains nothing for users, would be irreversible in production, and is not needed to remove the misleading UI. Treat the orphan column as a deliberate compatibility decision, not a bug to "fix" casually.
 - Actual joining date is an editable pipeline-grid column. The 202609130001_add_actual_joining_date_to_operations.sql migration added actual_joining_date to update_candidate_operations while keeping the existing owner/archive permission checks intact.
 - Current in-app pipeline stages are still the 10-stage PIPELINE_STAGES list. The product owner's 16-stage lifecycle model (Company Requirement → ... → Payment Received) is the reference model the pipeline is evolving toward, and lifecycle milestone date fields remain an ongoing effort.
-- 11 migrations applied, timestamp-ordered, none reverted or hand-edited after the fact (per the docs/MVP_DEPLOYMENT.md deploy discipline). Don't hand-edit an already-applied migration — add a new one.
+- 12 migrations applied, timestamp-ordered, none reverted or hand-edited after the fact (per the docs/MVP_DEPLOYMENT.md deploy discipline). Don't hand-edit an already-applied migration — add a new one. Current list:
+  1. 202607220001_initial_schema.sql
+  2. 202607220002_rls_policies.sql
+  3. 202607220003_rpc_functions.sql
+  4. 202607220004_seed_helpers.sql
+  5. 202607230001_demo_data_support.sql
+  6. 202607310001_vacancies_and_candidate_extensions.sql
+  7. 202607310002_interviews.sql
+  8. 202608010001_demo_extensions_scorecards_activity_views_billing.sql
+  9. 202608010002_candidate_workflow_and_retention.sql
+  10. 202608010003_safe_permanent_candidate_delete.sql
+  11. 202609130001_add_actual_joining_date_to_operations.sql
+  12. 202609280001_restrict_retention_invoice_fields_to_admin.sql
 
-## 6. Known limitations (real, not the AI-generated placeholder list from before)
+## 6. Scripts
+
+- scripts/snapshot.sh prints Git state, the file tree for src/, supabase/migrations/, and docs/, plus the full contents of any files passed as arguments, as one pasteable block with a character-count footer. It exists so an AI agent on a fresh machine can get a compact repo snapshot without re-downloading and re-grepping the same context every session. Usage is documented under Scripts in README.md.
+
+## 7. Known limitations (real, not the AI-generated placeholder list from before)
 
 - No production LLM backend — "Ask Telora" is rules-based only.
 - No email/WhatsApp provider integration — manual draft-and-copy only.
-- Retention and invoice milestone fields exist, but invoice_eligibility_date and retention_* fields are not yet admin-editable/read-only-for-recruiters in the product-owner target model.
+- Lifecycle milestone date fields beyond actual_joining_date are not built yet.
 - Single organisation in practice (Hiring Spartans); multi-tenant behaviour exists in schema (organisation_id scoping) but has only ever been exercised by one tenant.
 - Free-plan 15-user cap is a hard DB constraint, not a soft UI warning.
 
-## 7. Existing internal roadmap
+## 8. Existing internal roadmap
 
 docs/COMPETITIVE_GAP_AUDIT.md already has a prioritised P0–P3 list (protect trust/ops → beat the spreadsheet → reduce coordination effort → defer until usage proves the need). Read that before proposing new priorities — don't re-derive a roadmap that already exists in the repo.
 
 Current priority order:
 
-1. Retention/invoice-eligibility field permissions: make invoice_eligibility_date and retention_* fields admin-editable and read-only for recruiters. Direct candidate updates are already protected by admin-only RLS; this needs a new migration that tightens the security-definer update_candidate_profile_extensions RPC and its field allowlist.
-2. Add the 16 lifecycle milestone date fields. Current code still has the 10-stage PIPELINE_STAGES list and does not implement those milestone fields; this needs a migration.
-3. Recruiter Salary & Leave module: P2, not started.
-4. Naukri Resdex sourcing and real AI for Ask Telora: deferred.
+1. 16 lifecycle milestone date fields — current code still has the 10-stage PIPELINE_STAGES list and does not implement those milestone fields; this needs a migration.
+2. Recruiter Salary & Leave module — admin sets annual leave balance, recruiter applies from the tool, admin approves, balance decrements automatically, and each leave is marked paid or unpaid with unpaid leave affecting salary. Needs a migration. Not started.
+3. Naukri Resdex sourcing and real AI for Ask Telora — deferred.
 
-## 8. Rules for any agent working on this repo
+## 9. Rules for any agent working on this repo
 
 - Never expose secrets. Nothing but VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY goes into VITE_-prefixed env vars.
 - Never weaken RLS to make a feature easier to build.
@@ -118,6 +137,6 @@ Current priority order:
 - Run pnpm install && pnpm test && pnpm build before calling anything done.
 - Before making changes: pull main, check git log for anything since this file was last updated, and re-verify any claim in this document that matters for the task at hand. This file is a starting point, not a source of truth that overrides the live repo.
 
-## 9. Ownership
+## 10. Ownership
 
 Repo owner / product decision-maker: Karan Munjal (munjalkaran). Client-facing accountability, roadmap calls, and what ships are his to decide — an agent proposes, it doesn't merge to main unasked.
