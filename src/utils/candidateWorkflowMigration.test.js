@@ -4,6 +4,9 @@ import { describe, expect, it } from "vitest";
 const migration = readFileSync(new URL("../../supabase/migrations/202608010002_candidate_workflow_and_retention.sql", import.meta.url), "utf8").toLowerCase();
 const operationsMigration = readFileSync(new URL("../../supabase/migrations/202609130001_add_actual_joining_date_to_operations.sql", import.meta.url), "utf8").toLowerCase();
 const adminOnlyMigration = readFileSync(new URL("../../supabase/migrations/202609280001_restrict_retention_invoice_fields_to_admin.sql", import.meta.url), "utf8").toLowerCase();
+const nullActorMigration = readFileSync(new URL("../../supabase/migrations/202609290001_reject_null_actors_in_privileged_rpcs.sql", import.meta.url), "utf8").toLowerCase();
+
+const functionBody = (source, name) => source.match(new RegExp(`create or replace function public\\.${name}\\([\\s\\S]*?\\n\\$\\$;`))?.[0] || "";
 
 describe("candidate workflow migration contract", () => {
   it("adds offer, joining, checklist and retention foundations", () => {
@@ -42,5 +45,22 @@ describe("candidate workflow migration contract", () => {
     expect(adminOnlyMigration).toContain("assigned_recruiter_id = actor.id");
     expect(adminOnlyMigration).toContain("write_candidate_audit");
     expect(adminOnlyMigration).toContain("grant execute on function public.update_candidate_profile_extensions(uuid, jsonb) to authenticated");
+  });
+
+  it("rejects null actors in every affected privileged RPC", () => {
+    const affectedFunctions = [
+      "update_candidate_operations",
+      "update_candidate_profile_extensions",
+      "request_candidate_change",
+      "archive_candidate",
+      "record_email_draft_opened",
+      "record_duplicate_warning_dismissed",
+      "link_candidate_records",
+    ];
+
+    affectedFunctions.forEach((name) => {
+      const body = functionBody(nullActorMigration, name);
+      expect(body).toMatch(/actor := public\.current_profile\(\);\s+if actor\.id is null then raise exception 'permission denied'; end if;/);
+    });
   });
 });
