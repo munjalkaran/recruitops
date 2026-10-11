@@ -14,6 +14,8 @@ React 18 + Vite 5 + Tailwind 3, pnpm. Supabase (Postgres, Auth, RLS, RPC, Realti
 - Run pnpm install && pnpm test && pnpm build before saying any task is done. Report if any fail.
 - For anything beyond a trivial fix, work in a feature branch.
 - Always show me a git diff of what changed before pushing. Push to main only after I approve the diff, then confirm the push succeeded.
+- Never leave docs/TELORA_MASTER_CONTEXT.md modified in the working tree. It is updated only as part of the commit for the work it describes, and only after that work's commit hash is confirmed on origin/main. Never cite a local-only commit hash in it.
+- In PL/pgSQL authorization checks, never compare a field of a SELECT ... INTO record before guarding that record for NULL. A negative comparison against a NULL record evaluates to NULL, not true, so the rejection branch is skipped. Prefer positive comparisons, or IS DISTINCT FROM, in any security-definer function.
 
 ## Roadmap
 
