@@ -341,6 +341,7 @@ export default function CandidateDetailsDialog({
       onClose={onClose}
       busy={saving}
       size="max-w-5xl"
+      dialogTestId="candidate-detail"
       footer={
         <div className="flex justify-end gap-2">
           <button type="button" className="action-button border border-app bg-surface text-secondary hover:bg-raised" disabled={saving} onClick={onClose}>

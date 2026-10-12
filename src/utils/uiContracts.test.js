@@ -4,12 +4,12 @@ import { describe, expect, it } from "vitest";
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
 describe("Telora layout contracts", () => {
-  it("keeps Ask AI in the sidebar footer instead of a fixed bottom bar", () => {
+  it("keeps Ask Telora in the sidebar footer instead of a fixed bottom bar", () => {
     const header = read("components/Header.jsx");
     const shell = read("components/AppShell.jsx");
     const sidebar = read("components/Sidebar.jsx");
     const theme = read("styles/theme.css");
-    expect(header).not.toContain("Ask AI");
+    expect(header).not.toContain("Ask Telora");
     expect(header).not.toContain("onAskAI");
     expect(header).not.toContain("Demo fallback");
     expect(shell).not.toContain("AskCommandBar");
@@ -17,7 +17,6 @@ describe("Telora layout contracts", () => {
     expect(shell).toContain("onAskAI={openAskAI}");
     expect(sidebar).toContain("Ask Telora");
     expect(sidebar).toContain("onAskAI?.()");
-    expect(sidebar).not.toContain("Ask Telora AI about");
     expect(theme).not.toContain("--ask-command-bar");
     expect(read("components/AskAIPanel.jsx")).toContain('import Modal from "./Modal"');
     expect(read("components/AskAIPanel.jsx")).not.toContain("fixed inset-0 z-[60]");
@@ -70,7 +69,6 @@ describe("Telora layout contracts", () => {
 
   it("keeps Coming Soon limited to genuinely future capabilities", () => {
     const sidebar = read("components/Sidebar.jsx");
-    expect(sidebar).not.toContain('"Ask Telora AI"');
     expect(sidebar).not.toContain('"Interview management"');
     expect(sidebar).not.toContain('"Vacancy management"');
     expect(sidebar).not.toContain('"PDF invoices"');
@@ -155,6 +153,8 @@ describe("Telora layout contracts", () => {
     const dialog = read("components/CandidateDetailsDialog.jsx");
     expect(grid).toContain("formatFollowUpTooltip");
     expect(grid).toContain("Overdue follow-up - was due");
+    expect(grid).toContain('data-testid="overdue-tooltip"');
+    expect(grid).not.toContain("title={followUpTooltip}");
     expect(dialog).toContain("CLOSED_STAGES.includes");
     expect(dialog).toContain('field === "next_follow_up" && hideNextFollowUp');
   });

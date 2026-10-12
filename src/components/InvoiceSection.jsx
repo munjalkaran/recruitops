@@ -59,6 +59,7 @@ export default function InvoiceSection({
             onClick={onMarkInvoiced}
             disabled={!hasEligibleCandidates}
             className="action-button action-primary"
+            data-testid="invoice-mark-all"
           >
             <ReceiptText size={16} strokeWidth={2.2} />
             Mark all as Invoiced

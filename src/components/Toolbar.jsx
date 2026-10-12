@@ -52,6 +52,7 @@ export default function Toolbar({ searchTerm, activeProfile, shownCount, totalCo
             onClick={() => setOpenMenu((current) => current === "saved" ? null : "saved")}
             className="glass-control action-button border"
             aria-expanded={savedViewsOpen}
+            data-testid="saved-views-trigger"
           >
             <Bookmark size={15} /> Saved views <ChevronDown size={14} />
           </button>

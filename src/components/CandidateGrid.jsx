@@ -405,16 +405,20 @@ export default function CandidateGrid({
         <div className="flex min-w-0 items-center gap-2">
           {stale ? (
             <span
-              className="inline-flex shrink-0 text-amber-600"
-              title={followUpTooltip}
+              className="overdue-followup-icon inline-flex shrink-0 text-amber-600"
               aria-label={followUpTooltip}
               role="img"
+              tabIndex={0}
+              data-testid="overdue-icon"
             >
               <AlertTriangle
                 size={14}
                 strokeWidth={2.2}
                 aria-hidden="true"
               />
+              <span className="overdue-followup-tooltip" data-testid="overdue-tooltip">
+                {followUpTooltip}
+              </span>
             </span>
           ) : null}
           <button
@@ -575,7 +579,7 @@ export default function CandidateGrid({
   };
 
   return (
-    <div className="overflow-hidden rounded-lg border border-app bg-surface">
+    <div className="overflow-hidden rounded-lg border border-app bg-surface" data-testid="pipeline-grid">
       <div className={`${fillHeight && candidates.length ? "min-h-[220px]" : "max-h-[calc(100vh-330px)] min-h-[220px]"} overflow-auto`} style={{ "--actions-column-width": `${STICKY_ACTION_WIDTH}px`, "--candidate-column-width": "260px", ...(fillHeight && candidates.length ? { height: "max(220px, calc(100vh - 285px))" } : {}) }}>
         <table className={`${tableWidth} w-full border-separate border-spacing-0 text-left`}>
           <thead className="glass-header sticky top-0 z-30 text-[11px] uppercase text-secondary">

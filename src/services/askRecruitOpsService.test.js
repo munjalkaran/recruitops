@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { interpretRecruitOpsQuestion } from "./askRecruitOpsService";
 
-describe("Telora AI interview fallbacks", () => {
+describe("Telora interview fallbacks", () => {
   it("answers interview questions from available records", () => {
     const response = interpretRecruitOpsQuestion("Show interviews scheduled today", {
       interviews: [{ scheduled_at: new Date().toISOString(), round_type: "TP1", interview_status: "Scheduled" }],

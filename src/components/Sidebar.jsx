@@ -22,7 +22,7 @@ import { TeloraLogo, TeloraWordmark } from "./TeloraLogo";
 import useDismissibleSurface from "../hooks/useDismissibleSurface";
 
 const upcomingFeatures = [
-  "AI resume parsing",
+  "Resume parsing",
   "Direct Gmail and Outlook integration",
   "WhatsApp follow-ups",
   "Automated stale reminders",
@@ -146,6 +146,7 @@ export default function Sidebar({
             type="button"
             onClick={() => onAskAI?.()}
             className="flex h-12 w-full items-center gap-2 rounded-lg border border-app bg-raised px-3 py-2 text-left text-sm font-semibold text-primary transition hover:bg-surface"
+            data-testid="ask-telora-trigger"
           >
             <Sparkles size={15} className="shrink-0 text-[var(--accent)]" />
             <span className="truncate">Ask Telora</span>
