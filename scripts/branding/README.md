@@ -8,7 +8,7 @@ From the repo root, run:
 
 ```sh
 cd scripts/branding
-pnpm install --no-lockfile
+pnpm install --ignore-workspace --no-lockfile
 ```
 
 This installs only the renderer tools in this folder.
@@ -26,7 +26,7 @@ The renderer creates:
 - `scripts/branding/out/telora-logo-sting.mp4`
 - `scripts/branding/out/telora-logo-sting.gif`
 
-The MP4 is the best file for WhatsApp, YouTube, and normal sharing. The GIF is a smaller fallback for places that cannot accept video.
+The MP4 is the best file for WhatsApp, YouTube, and normal sharing. The GIF is limited to 256 colours, so it will always look worse than the MP4; use it only for surfaces that cannot accept video.
 
 ## Change the words or colours
 

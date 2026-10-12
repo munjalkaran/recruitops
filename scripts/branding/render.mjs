@@ -13,6 +13,7 @@ const DURATION_SECONDS = 4;
 const FRAME_COUNT = FPS * DURATION_SECONDS;
 const WIDTH = 1920;
 const HEIGHT = 1080;
+const DEVICE_SCALE_FACTOR = 2;
 const GIF_WIDTH = 1280;
 const GIF_FPS = 15;
 
@@ -35,7 +36,7 @@ async function main() {
 
     browser = await launchBrowser();
     const page = await browser.newPage();
-    await page.setViewport({ width: WIDTH, height: HEIGHT, deviceScaleFactor: 1 });
+    await page.setViewport({ width: WIDTH, height: HEIGHT, deviceScaleFactor: DEVICE_SCALE_FACTOR });
     await page.emulateMediaFeatures([{ name: "prefers-reduced-motion", value: "no-preference" }]);
 
     await loadStingPage(page);
@@ -84,7 +85,7 @@ async function launchBrowser() {
     console.log("Launching bundled Chromium...");
     return await puppeteer.launch({
       headless: true,
-      defaultViewport: { width: WIDTH, height: HEIGHT, deviceScaleFactor: 1 },
+      defaultViewport: { width: WIDTH, height: HEIGHT, deviceScaleFactor: DEVICE_SCALE_FACTOR },
       userDataDir: browserProfileDir,
       args: [
         `--crash-dumps-dir=${crashDumpsDir}`,
@@ -163,7 +164,9 @@ async function captureFrames(page) {
       throw new Error(`Expected exactly 3 animations, but found ${animationCount}.`);
     }
 
-    console.log(`Capturing ${FRAME_COUNT} PNG frames at ${WIDTH}x${HEIGHT}, ${FPS}fps...`);
+    console.log(
+      `Capturing ${FRAME_COUNT} PNG frames at ${WIDTH * DEVICE_SCALE_FACTOR}x${HEIGHT * DEVICE_SCALE_FACTOR}, ${FPS}fps...`
+    );
     for (let frame = 0; frame < FRAME_COUNT; frame += 1) {
       const currentTimeMs = (frame / FPS) * 1000;
       await page.evaluate((time) => {
@@ -195,12 +198,14 @@ async function stitchMp4() {
       "0",
       "-i",
       join(framesDir, "frame-%04d.png"),
+      "-vf",
+      `scale=${WIDTH}:${HEIGHT}:flags=lanczos`,
       "-c:v",
       "libx264",
       "-pix_fmt",
       "yuv420p",
       "-crf",
-      "18",
+      "14",
       "-r",
       String(FPS),
       "-movflags",
