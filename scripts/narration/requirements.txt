@@ -1,0 +1,14 @@
+kokoro==0.9.4
+soundfile==0.13.1
+numpy==2.2.6
+torch==2.14.1
+transformers==5.19.0
+huggingface-hub==2.2.0
+tokenizers==0.23.3
+safetensors==0.8.0
+sympy==1.14.0
+
+# Optional second engine. bakeoff.py installs this only after Kokoro output is
+# attempted, in scripts/narration/.venv-chatterbox, so a Chatterbox
+# install/download failure cannot block or disturb Kokoro WAVs.
+# optional-after-kokoro: chatterbox-tts==0.1.7

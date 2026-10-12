@@ -1,0 +1,5 @@
+.venv/
+.venv-chatterbox/
+out/
+__pycache__/
+*.pyc
