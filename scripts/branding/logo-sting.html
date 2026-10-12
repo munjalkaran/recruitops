@@ -1,0 +1,211 @@
+<!--
+  Recording notes:
+  Open this file in Chrome with ?clean=1, set the screen recorder to the exact
+  1920x1080 canvas region, and record at 60fps. The animation settles by 4.5s
+  and then holds on the final frame indefinitely.
+-->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Telora Logo Sting</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg: #f5f3ed;
+        --text: #18322b;
+        --text-muted: #6d756f;
+        --ease: cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+      }
+
+      body {
+        display: grid;
+        min-height: 100vh;
+        place-items: center;
+        overflow: auto;
+        background: #111113;
+        color: var(--text);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      .canvas {
+        display: grid;
+        width: 1920px;
+        height: 1080px;
+        place-items: center;
+        overflow: hidden;
+        background: var(--bg);
+      }
+
+      .lockup {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 58px;
+        transform: translateY(-34px);
+      }
+
+      .logo {
+        width: 768px;
+        height: auto;
+        overflow: visible;
+      }
+
+      #mark {
+        animation: mark-in 1.2s var(--ease) both;
+        transform-box: fill-box;
+        transform-origin: center;
+      }
+
+      #wordmark {
+        animation: wordmark-in 1s var(--ease) 1s both;
+        clip-path: inset(0 100% 0 0);
+      }
+
+      .tagline {
+        margin: 0;
+        color: var(--text-muted);
+        font-size: 38px;
+        font-weight: 500;
+        letter-spacing: 0.08em;
+        line-height: 1.2;
+        opacity: 0;
+        animation: tagline-in 1s var(--ease) 2.2s both;
+      }
+
+      .replay {
+        position: fixed;
+        bottom: max(24px, calc((100vh - 1080px) / 2 + 24px));
+        left: calc(50% + 960px + 24px);
+        min-width: 96px;
+        height: 42px;
+        border: 1px solid rgb(245 243 237 / 18%);
+        border-radius: 8px;
+        background: rgb(251 250 247 / 92%);
+        color: var(--text);
+        cursor: pointer;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        box-shadow: 0 12px 32px rgb(0 0 0 / 24%);
+        transition: background 160ms var(--ease), transform 160ms var(--ease);
+      }
+
+      .replay:hover {
+        background: #ffffff;
+        transform: translateY(-1px);
+      }
+
+      .replay:focus-visible {
+        outline: 2px solid var(--text);
+        outline-offset: 3px;
+      }
+
+      .clean .replay {
+        display: none;
+      }
+
+      @keyframes mark-in {
+        from {
+          opacity: 0;
+          transform: scale(0.92);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+
+      @keyframes wordmark-in {
+        from {
+          clip-path: inset(0 100% 0 0);
+          transform: translateY(12px);
+        }
+        to {
+          clip-path: inset(0 0 0 0);
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes tagline-in {
+        from {
+          opacity: 0;
+          letter-spacing: 0.3em;
+        }
+        to {
+          opacity: 1;
+          letter-spacing: 0.08em;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        #mark,
+        #wordmark,
+        .tagline {
+          animation: none;
+          opacity: 1;
+          transform: none;
+        }
+
+        #wordmark {
+          clip-path: inset(0 0 0 0);
+        }
+
+        .tagline {
+          letter-spacing: 0.08em;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="canvas" aria-label="Telora logo sting canvas">
+      <section class="lockup" aria-label="Telora">
+        <svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 330 100" role="img" aria-labelledby="logo-title">
+          <title id="logo-title">Telora logo</title>
+          <g fill="#18322b">
+            <path id="mark" d="M8 8H92V20H8ZM8 28H29C41 28 47 34 47 46V92H35V51C35 43 30 40 22 40H8ZM92 28H71C59 28 53 34 53 46V92H65V51C65 43 70 40 78 40H92Z" />
+            <path id="wordmark" d="m 121.25391,32.105469 h 15.57226 V 76 h 6.3086 V 32.105469 h 15.50585 v -5.578125 h -37.38671 z m 55.37968,44.691406 c 7.60352,0 13.14844,-3.818359 14.875,-9.429688 l -5.77734,-1.59375 c -1.39453,3.785157 -4.68164,5.710938 -9.06445,5.710938 -6.57422,0 -11.08985,-4.25 -11.38867,-12.019531 h 26.82812 v -2.490235 c 0,-13.71289 -8.30078,-18.560547 -16.16992,-18.560547 -10.12695,0 -16.70117,7.935547 -16.70117,19.324219 0,11.421875 6.64062,19.058594 17.39843,19.058594 z M 165.31133,54.417969 c 0.36523,-5.677735 4.25,-10.691407 10.625,-10.691407 6.10937,0 9.5293,4.382813 10.09375,10.691407 z m 40.53789,-27.890625 h -5.97656 V 76 h 5.97656 z m 24.79961,50.269531 c 10.12695,0 16.96679,-7.669922 16.96679,-19.125 0,-11.621094 -6.83984,-19.257813 -16.96679,-19.257813 -10.09375,0 -16.90039,7.636719 -16.90039,19.257813 0,11.455078 6.80664,19.125 16.90039,19.125 z m 0,-5.345703 c -7.4043,0 -10.82422,-6.47461 -10.82422,-13.779297 0,-7.404297 3.41992,-13.912109 10.82422,-13.912109 7.5039,0 10.92382,6.541015 10.92382,13.912109 0,7.304687 -3.41992,13.779297 -10.92382,13.779297 z M 255.51485,76 h 5.97656 V 52.757812 c 0,-5.013671 3.91797,-8.632812 9.26367,-8.632812 1.59375,0 3.2207,0.265625 3.58594,0.332031 v -6.009765 c -0.69727,-0.0332 -2.1582,-0.09961 -3.02149,-0.09961 -4.41601,0 -8.26757,2.490235 -9.6289,6.242188 h -0.39844 v -5.710938 h -5.77734 z m 35.19218,0.863281 c 6.27539,0 9.76172,-3.287109 11.02344,-5.910156 h 0.39844 V 76 h 5.87695 V 51.529297 c 0,-11.587891 -8.93164,-13.115235 -13.91211,-13.115235 -5.74414,0 -12.11914,2.058594 -14.97461,8.798829 l 5.74414,1.892578 c 1.16211,-2.589844 4.05078,-5.445313 9.39649,-5.445313 5.14648,0 7.76953,2.65625 7.76953,7.271485 v 0.199218 c 0,2.75586 -2.92188,2.556641 -9.5293,3.386719 -6.87305,0.863281 -14.44336,2.423828 -14.44336,10.923828 0,7.304688 5.61133,11.421875 12.65039,11.421875 z m 1.0293,-5.279297 c -4.44922,0 -7.66992,-1.992187 -7.66992,-5.84375 0,-4.216797 3.81836,-5.611328 8.16796,-6.175781 2.29102,-0.298828 8.79883,-0.962891 9.79493,-2.125 v 5.146484 c 0,4.548829 -3.68555,8.998047 -10.29297,8.998047 z" />
+          </g>
+        </svg>
+        <p class="tagline">Talent, tracked with clarity.</p>
+      </section>
+    </main>
+    <button class="replay" type="button">Replay</button>
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const clean = params.get("clean") === "1";
+      const replay = document.querySelector(".replay");
+
+      if (clean) {
+        document.documentElement.classList.add("clean");
+      }
+
+      replay.addEventListener("click", () => {
+        const canvas = document.querySelector(".canvas");
+        canvas.style.animation = "none";
+        canvas.offsetHeight;
+        canvas.style.animation = "";
+        document.querySelectorAll("#mark, #wordmark, .tagline").forEach((element) => {
+          element.style.animation = "none";
+          element.offsetHeight;
+          element.style.animation = "";
+        });
+      });
+    </script>
+  </body>
+</html>
